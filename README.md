@@ -1,4 +1,4 @@
 # AUTHORS
-Lea Duesterwald (lkd46)
+Lea Duesterwald (lkd46)  
 Jasmine Dietiker (jfd237)
 

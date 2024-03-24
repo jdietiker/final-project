@@ -1,1 +1,2 @@
-module type Gameboard = sig end
+type elt
+type t = elt array array

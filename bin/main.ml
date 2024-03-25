@@ -1,2 +1,6 @@
+open Final_project.Gui
+
 let () = print_endline "Hello, World!"
-let () = Final_project.Gui.draw_grid_h
+let () = draw_grid
+let rec loop () = loop ()
+let () = loop ()

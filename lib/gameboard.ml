@@ -1,5 +1,12 @@
-type multipler = TW | DW | TL | DL | Star | No
-type elt = multipler * char
+type multiplier =
+  | TW
+  | DW
+  | TL
+  | DL
+  | Star
+  | No
+
+type elt = multiplier * char
 type t = elt array array
 
 let empty : t =
@@ -519,3 +526,13 @@ let init : t =
       (TW, ' ');
     |];
   |]
+
+(* not mutable for now *)
+let multiplier_at (board : t) i j =
+  match board.(i).(j) with
+  | m, _ -> m
+
+(* not mutable for now *)
+let char_at (board : t) i j =
+  match board.(i).(j) with
+  | _, c -> c

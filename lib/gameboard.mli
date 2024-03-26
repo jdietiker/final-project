@@ -30,3 +30,16 @@ val multiplier_at : t -> int -> int -> multiplier
 val char_at : t -> int -> int -> char
 (** [char_at board i j] is the character stored at row [i], column [j] in
     [board]*)
+
+val el_multiplier : elt -> multiplier
+(** [el_multiplier el] is the multiplier stored in element [el] *)
+
+val el_char : elt -> char
+(** [el_char el] is the character stored in element [el] *)
+
+val el_at : t -> int -> int -> elt
+(** [el_at board i j] is the element stored stored at row [i], column [j] in
+    [board] *)
+
+val length : t -> int
+(** [length board] is the length of [board] *)

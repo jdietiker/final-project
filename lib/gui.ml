@@ -1,4 +1,5 @@
 open Graphics
+open Gameboard
 
 let grid_size = 601
 
@@ -30,15 +31,47 @@ let rec draw_grid_v_aux = function
 let draw_grid =
   Graphics.open_graph
     (" " ^ string_of_int grid_size ^ "x" ^ string_of_int grid_size);
+  set_window_title "SCRABBLE!";
+  set_color black;
   set_text_size 200;
   draw_grid_h_aux coordinates;
   draw_grid_v_aux coordinates
 
-(* open Gameboard *)
-
 (** prints the ith cell in the jth column of board. *)
-(* let print_cell i j = moveto ((grid_size / 15 * i) + (grid_size / 60))
-   (grid_size - ((grid_size / 15 * j) + (grid_size / 20))); set_text_size 50;
-   draw_string "H" *)
+let print_cell i j s =
+  moveto
+    ((grid_size / 15 * i) + (grid_size / 60))
+    (grid_size - ((grid_size / 15 * j) + (grid_size / 20)));
+  set_text_size 50;
+  set_color black;
+  draw_char s
 
-(* let rec print_board board xpos ypos = match board with board.empty -> ()*)
+let print_cell_color i j (el : Gameboard.elt) =
+  let color =
+    match el_multiplier el with
+    | No -> if el_char el = ' ' then white else yellow
+    | TW -> red
+    | DW -> green
+    | TL -> blue
+    | DL -> cyan
+    | Star -> magenta
+  in
+  set_color color;
+  fill_rect
+    ((grid_size / 15 * i) + 1)
+    (grid_size - ((grid_size / 15 * j) + (grid_size / 15)))
+    ((grid_size / 15) - 2)
+    ((grid_size / 15) - 2);
+  print_cell i j (el_char el);
+  draw_grid
+
+(** prints a board with colors according to the type of multiplier and inputted
+    characters*)
+let print_board board =
+  for i = 0 to Gameboard.length board - 1 do
+    for j = 0 to Gameboard.length board - 1 do
+      print_cell_color i j (el_at board i j)
+    done
+  done
+
+let print_init = print_board Gameboard.init

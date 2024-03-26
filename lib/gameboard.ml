@@ -536,3 +536,8 @@ let multiplier_at (board : t) i j =
 let char_at (board : t) i j =
   match board.(i).(j) with
   | _, c -> c
+
+let el_multiplier (el : elt) = fst el
+let el_char (el : elt) = snd el
+let el_at (board : t) i j = board.(i).(j)
+let length (board : t) = Array.length board

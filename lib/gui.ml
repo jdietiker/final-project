@@ -46,7 +46,6 @@ let print_cell i j s =
   set_color black;
   draw_string s
 
-(* testing branches *)
 let print_el i j el =
   let s =
     if el_letter el = "" then
@@ -89,4 +88,18 @@ let print_board board =
     done
   done
 
-let print_init = print_board Gameboard.init
+(* let print_init = print_board Gameboard.init *)
+
+open Bogue
+module W = Widget
+module L = Layout
+
+let make_layout ?(w = 120) ?(h = 90) color text =
+  let text_room = Layout.resident (W.label text) in
+  let style = Style.(of_bg (color_bg color)) in
+  let image_room = Layout.resident (Widget.box ~w ~h ~style ()) in
+  Layout.superpose [ image_room; text_room ]
+
+let print_bogue =
+  make_layout Draw.(opaque (find_color "lightcoral")) "My first house"
+  |> Bogue.of_layout |> Bogue.run

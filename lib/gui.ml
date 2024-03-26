@@ -46,6 +46,20 @@ let print_cell i j s =
   set_color black;
   draw_string s
 
+let print_el i j el =
+  let s =
+    if el_letter el = "" then
+      match el_multiplier el with
+      | No -> ""
+      | TW -> "TW"
+      | DW -> "DW"
+      | TL -> "TL"
+      | DL -> "DL"
+      | Star -> " *"
+    else el_letter el
+  in
+  print_cell i j s
+
 let print_cell_color i j (el : Gameboard.elt) =
   let color =
     match el_multiplier el with
@@ -62,7 +76,7 @@ let print_cell_color i j (el : Gameboard.elt) =
     (grid_size - ((grid_size / 15 * j) + (grid_size / 15)))
     ((grid_size / 15) - 2)
     ((grid_size / 15) - 2);
-  print_cell i j (el_letter el);
+  print_el i j el;
   draw_grid
 
 (** prints a board with colors according to the type of multiplier and inputted

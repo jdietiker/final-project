@@ -44,12 +44,12 @@ let print_cell i j s =
     (grid_size - ((grid_size / 15 * j) + (grid_size / 20)));
   set_text_size 50;
   set_color black;
-  draw_char s
+  draw_string s
 
 let print_cell_color i j (el : Gameboard.elt) =
   let color =
     match el_multiplier el with
-    | No -> if el_char el = ' ' then white else yellow
+    | No -> if el_letter el = "" then white else yellow
     | TW -> red
     | DW -> green
     | TL -> blue
@@ -62,7 +62,7 @@ let print_cell_color i j (el : Gameboard.elt) =
     (grid_size - ((grid_size / 15 * j) + (grid_size / 15)))
     ((grid_size / 15) - 2)
     ((grid_size / 15) - 2);
-  print_cell i j (el_char el);
+  print_cell i j (el_letter el);
   draw_grid
 
 (** prints a board with colors according to the type of multiplier and inputted

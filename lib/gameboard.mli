@@ -27,15 +27,14 @@ val multiplier_at : t -> int -> int -> multiplier
 (** [multiplier board i j] is the multiplier stored in row [i], column [j] in
     [board] *)
 
-val char_at : t -> int -> int -> char
-(** [char_at board i j] is the character stored at row [i], column [j] in
-    [board]*)
+val letter_at : t -> int -> int -> string
+(** [letter_at board i j] is the letter stored at row [i], column [j] in [board]*)
 
 val el_multiplier : elt -> multiplier
 (** [el_multiplier el] is the multiplier stored in element [el] *)
 
-val el_char : elt -> char
-(** [el_char el] is the character stored in element [el] *)
+val el_letter : elt -> string
+(** [el_letter el] is the letter stored in element [el] *)
 
 val el_at : t -> int -> int -> elt
 (** [el_at board i j] is the element stored stored at row [i], column [j] in

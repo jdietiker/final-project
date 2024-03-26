@@ -46,6 +46,7 @@ let print_cell i j s =
   set_color black;
   draw_string s
 
+(* testing branches *)
 let print_el i j el =
   let s =
     if el_letter el = "" then

@@ -88,4 +88,15 @@ let print_board board =
     done
   done
 
+let find_square xpos ypos board =
+  for i = 0 to Gameboard.length board - 1 do
+    if xpos < (i + 1) * grid_size / 15 then
+      for j = 0 to Gameboard.length board - 1 do
+        if ypos < (j + 1) * grid_size / 15 then (i, j) else (-1, -1)
+      done
+  done
+
+let find_squ xpos ypos board =
+  (xpos / Gameboard.length board, ypos / Gameboard.length board)
+
 let print_init = print_board Gameboard.init

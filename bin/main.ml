@@ -1,7 +1,7 @@
 open Final_project.Gui
+open Final_project.Gameboard
 
 let () = print_endline "Hello, World!"
-let () = draw_grid
-let () = print_init
-let rec loop () = loop ()
+
+(* let board = init *)
 let () = loop ()

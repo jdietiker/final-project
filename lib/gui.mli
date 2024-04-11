@@ -1,2 +1,3 @@
 val draw_grid : unit
-val print_init : unit
+val print_board : Gameboard.t -> unit
+val loop : unit -> unit

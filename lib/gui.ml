@@ -2,6 +2,7 @@ open Graphics
 open Gameboard
 
 let grid_size = 601
+let board = init
 
 (** ex: [generate_coord 15 (600/15)] =
     [[0;40;80;120;160;200;240;280;320;360;400;440;480;520;560;600]] *)
@@ -64,11 +65,11 @@ let print_cell_color i j (el : Gameboard.elt) =
   let color =
     match el_multiplier el with
     | No -> if el_letter el = "" then white else yellow
-    | TW -> red
-    | DW -> green
-    | TL -> blue
-    | DL -> cyan
-    | Star -> magenta
+    | TW -> if el_letter el = "" then red else yellow
+    | DW -> if el_letter el = "" then green else yellow
+    | TL -> if el_letter el = "" then blue else yellow
+    | DL -> if el_letter el = "" then cyan else yellow
+    | Star -> if el_letter el = "" then magenta else yellow
   in
   set_color color;
   fill_rect
@@ -88,13 +89,30 @@ let print_board board =
     done
   done
 
-let find_squ xpos ypos board =
-  (xpos / Gameboard.length board, ypos / Gameboard.length board)
+let find_squ xpos ypos =
+  if xpos > -1 && xpos < grid_size && ypos > -1 && ypos < grid_size then
+    (xpos / (grid_size / 15), 14 - (ypos / (grid_size / 15)))
+  else (-1, -1)
 
-  let rec loop answer_matrix answer_string user_matrix size =
-    let e = wait_next_event [ Key_pressed; Button_down ] in
-  
-    let x_pos = e.mouse_x in
-    let y_pos = e.mouse_y in
+let rec loop () : unit =
+  draw_grid;
+  print_board board;
+  let e = wait_next_event [ Key_pressed; Button_down ] in
 
-let print_init = print_board Gameboard.init
+  let xpos = e.mouse_x in
+  let ypos = e.mouse_y in
+  let cell = find_squ xpos ypos in
+  draw_string
+    (string_of_int xpos ^ " " ^ string_of_int ypos ^ " : "
+    ^ string_of_int (fst cell)
+    ^ " "
+    ^ string_of_int (snd cell));
+
+  (if e.keypressed then
+     let letter = String.uppercase_ascii (String.make 1 e.key) in
+     let cell = find_squ xpos ypos in
+
+     if cell <> (-1, -1) then set_letter (fst cell) (snd cell) board letter);
+
+  (* else if e.button then *)
+  loop ()

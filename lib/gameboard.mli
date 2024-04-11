@@ -42,3 +42,5 @@ val el_at : t -> int -> int -> elt
 
 val length : t -> int
 (** [length board] is the length of [board] *)
+
+val set_letter : int -> int -> t -> string -> unit

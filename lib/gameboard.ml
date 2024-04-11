@@ -307,7 +307,6 @@ let init : t =
     [|
       (No, ref "");
       (No, ref "");
-      (No, ref "");
       (DW, ref "");
       (No, ref "");
       (No, ref "");
@@ -319,6 +318,7 @@ let init : t =
       (No, ref "");
       (No, ref "");
       (DW, ref "");
+      (No, ref "");
       (No, ref "");
       (No, ref "");
     |];

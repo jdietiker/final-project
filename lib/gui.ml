@@ -88,15 +88,13 @@ let print_board board =
     done
   done
 
-let find_square xpos ypos board =
-  for i = 0 to Gameboard.length board - 1 do
-    if xpos < (i + 1) * grid_size / 15 then
-      for j = 0 to Gameboard.length board - 1 do
-        if ypos < (j + 1) * grid_size / 15 then (i, j) else (-1, -1)
-      done
-  done
-
 let find_squ xpos ypos board =
   (xpos / Gameboard.length board, ypos / Gameboard.length board)
+
+  let rec loop answer_matrix answer_string user_matrix size =
+    let e = wait_next_event [ Key_pressed; Button_down ] in
+  
+    let x_pos = e.mouse_x in
+    let y_pos = e.mouse_y in
 
 let print_init = print_board Gameboard.init

@@ -1,3 +1,3 @@
 val draw_grid : unit
 val print_board : Gameboard.t -> unit
-val loop : unit -> unit
+val loop : (int * int) ref -> unit

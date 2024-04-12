@@ -2,6 +2,37 @@ open Graphics
 open Gameboard
 
 let grid_size = 601
+
+let alphabet =
+  [
+    "a";
+    "b";
+    "c";
+    "d";
+    "e";
+    "f";
+    "g";
+    "h";
+    "i";
+    "j";
+    "k";
+    "l";
+    "m";
+    "n";
+    "o";
+    "p";
+    "q";
+    "r";
+    "s";
+    "t";
+    "u";
+    "v";
+    "w";
+    "x";
+    "y";
+    "z";
+  ]
+
 let board = init
 
 (** ex: [generate_coord 15 (600/15)] =
@@ -89,30 +120,40 @@ let print_board board =
     done
   done
 
+let paint_outline (row, col) =
+  set_color red;
+  draw_rect
+    ((grid_size / 15 * row) + 1)
+    (grid_size - ((grid_size / 15 * col) + (grid_size / 15)))
+    ((grid_size / 15) - 2)
+    ((grid_size / 15) - 2)
+
 let find_squ xpos ypos =
   if xpos > -1 && xpos < grid_size && ypos > -1 && ypos < grid_size then
     (xpos / (grid_size / 15), 14 - (ypos / (grid_size / 15)))
   else (-1, -1)
 
-let rec loop () : unit =
+let rec loop (selected : (int * int) ref) : unit =
   draw_grid;
   print_board board;
-  let e = wait_next_event [ Key_pressed; Button_down ] in
+  paint_outline !selected;
 
-  let xpos = e.mouse_x in
-  let ypos = e.mouse_y in
-  let cell = find_squ xpos ypos in
-  draw_string
-    (string_of_int xpos ^ " " ^ string_of_int ypos ^ " : "
-    ^ string_of_int (fst cell)
-    ^ " "
-    ^ string_of_int (snd cell));
+  let e = wait_next_event [ Button_down; Key_pressed ] in
 
-  (if e.keypressed then
-     let letter = String.uppercase_ascii (String.make 1 e.key) in
-     let cell = find_squ xpos ypos in
+  if e.keypressed then (
+    let letter = String.make 1 e.key in
 
-     if cell <> (-1, -1) then set_letter (fst cell) (snd cell) board letter);
+    if List.mem letter alphabet then
+      if !selected <> (-1, -1) then
+        set_letter (fst !selected) (snd !selected) board
+          (String.uppercase_ascii letter))
+  else if e.button then (
+    let xpos = e.mouse_x in
+    let ypos = e.mouse_y in
+    let cell = find_squ xpos ypos in
 
-  (* else if e.button then *)
-  loop ()
+    if find_squ xpos ypos <> !selected then selected := cell;
+    print_board board;
+    paint_outline !selected);
+
+  loop selected

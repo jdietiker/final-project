@@ -71,9 +71,10 @@ let draw_grid =
 
 (** prints the ith cell in the jth column of board. *)
 let print_cell i j s =
+  let a, b = text_size s in
   moveto
-    ((grid_size / 15 * i) + (grid_size / 60))
-    (grid_size - ((grid_size / 15 * j) + (grid_size / 20)));
+    ((grid_size / 15 * i) + (grid_size / 30) - (a / 2) + 1)
+    (grid_size - ((grid_size / 15 * j) + (grid_size / 30) + (b / 2) + 2));
   set_text_size 50;
   set_color black;
   draw_string s
@@ -87,7 +88,7 @@ let print_el i j el =
       | DW -> "DW"
       | TL -> "TL"
       | DL -> "DL"
-      | Star -> " *"
+      | Star -> "*"
     else el_letter el
   in
   print_cell i j s

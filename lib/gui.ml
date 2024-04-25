@@ -142,17 +142,38 @@ let rec reset_turn (changes : (string * int * int) list ref) =
       changes := t;
       reset_turn changes
 
+let check_word (changes : (string * int * int) list ref) =
+  let wordpos =
+    List.sort_uniq
+      (fun (_, x1, y1) (_, x2, y2) ->
+        if x1 > x2 then 1
+        else if x1 < x2 then -1
+        else if y1 > y2 then 1
+        else if y1 < y2 then -1
+        else 0)
+      !changes
+  in
+  match wordpos with
+  | [] -> false
+  | (_, xh, yh) :: _ ->
+      if List.filter (fun (_, x, _) -> x = xh) wordpos = wordpos then
+        (* all in one column *)
+        failwith "TODO"
+      else if List.filter (fun (_, _, y) -> y = yh) wordpos = wordpos then
+        (* all in one row *)
+        failwith "TODO"
+      else false
+
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
 let rec loop (selected : (int * int) ref)
-    (before_changes : (string * int * int) list ref) : unit =
+    (backpointers : (string * int * int) list ref) : unit =
   draw_grid;
   print_board board;
   paint_outline !selected;
 
   let e = wait_next_event [ Button_down; Key_pressed ] in
 
-  let orig_status = before_changes in
   if e.keypressed then (
     let letter = String.make 1 e.key in
 
@@ -160,10 +181,10 @@ let rec loop (selected : (int * int) ref)
       match !selected with
       | -1, -1 -> ()
       | a, b ->
-          orig_status := (letter_at board a b, a, b) :: !orig_status;
+          backpointers := (letter_at board a b, a, b) :: !backpointers;
           set_letter a b board (String.uppercase_ascii letter))
-    else if letter = "/" then orig_status := []
-    else if letter = " " then reset_turn orig_status)
+    else if letter = "/" then backpointers := []
+    else if letter = " " then reset_turn backpointers)
   else if e.button then (
     let xpos = e.mouse_x in
     let ypos = e.mouse_y in
@@ -173,4 +194,4 @@ let rec loop (selected : (int * int) ref)
     print_board board;
     paint_outline !selected);
 
-  loop selected orig_status
+  loop selected backpointers

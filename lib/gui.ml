@@ -134,20 +134,36 @@ let find_squ xpos ypos =
     (xpos / (grid_size / 15), 14 - (ypos / (grid_size / 15)))
   else (-1, -1)
 
-let rec loop (selected : (int * int) ref) : unit =
+let rec reset_turn (changes : (string * int * int) list ref) =
+  match !changes with
+  | [] -> ()
+  | (ch, x, y) :: t ->
+      set_letter x y board ch;
+      changes := t;
+      reset_turn changes
+
+(** before_changes represents the changes required to get the board back to
+    before the new letters are inputted. *)
+let rec loop (selected : (int * int) ref)
+    (before_changes : (string * int * int) list ref) : unit =
   draw_grid;
   print_board board;
   paint_outline !selected;
 
   let e = wait_next_event [ Button_down; Key_pressed ] in
 
+  let orig_status = before_changes in
   if e.keypressed then (
     let letter = String.make 1 e.key in
 
-    if List.mem letter alphabet then
-      if !selected <> (-1, -1) then
-        set_letter (fst !selected) (snd !selected) board
-          (String.uppercase_ascii letter))
+    if List.mem letter alphabet then (
+      match !selected with
+      | -1, -1 -> ()
+      | a, b ->
+          orig_status := (letter_at board a b, a, b) :: !orig_status;
+          set_letter a b board (String.uppercase_ascii letter))
+    else if letter = "/" then orig_status := []
+    else if letter = " " then reset_turn orig_status)
   else if e.button then (
     let xpos = e.mouse_x in
     let ypos = e.mouse_y in
@@ -157,4 +173,4 @@ let rec loop (selected : (int * int) ref) : unit =
     print_board board;
     paint_outline !selected);
 
-  loop selected
+  loop selected orig_status

@@ -158,6 +158,7 @@ let check_word (changes : (string * int * int) list ref) =
   | (_, xh, yh) :: _ ->
       if List.filter (fun (_, x, _) -> x = xh) wordpos = wordpos then
         (* all in one column *)
+        (* NOTE TO SELF: be careful if they skip a cell!!!! *)
         failwith "TODO"
       else if List.filter (fun (_, _, y) -> y = yh) wordpos = wordpos then
         (* all in one row *)

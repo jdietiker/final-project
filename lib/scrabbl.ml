@@ -1,3 +1,5 @@
+open Graphics
+
 let dict = Arg.read_arg "data/dictionary.txt"
 
 module StringSet = Set.Make (struct
@@ -11,6 +13,43 @@ let dict = StringSet.of_list (Array.to_list dict)
 let valid_word str = StringSet.mem str dict
 
 open Gameboard
+
+(** gets the integer value of the color *)
+let get_cell_val (c : color) : string =
+  if c = 0 then "0"
+  else if c = 1 then "1"
+  else if c = 2 then "2"
+  else if c = 3 then "3"
+  else if c = 4 then "4"
+  else if c = 5 then "5"
+  else if c = 6 then "6"
+  else if c = 7 then "7"
+  else if c = 8 then "8"
+  else if c = 9 then "9"
+  else if c = 10 then "10"
+  else if c = 1 then "11"
+  else if c = 2 then "12"
+  else if c = 3 then "13"
+  else if c = 4 then "14"
+  else "15"
+
+let rec loop_guess lst =
+  match lst with
+  | [] -> 0
+  | h :: t -> begin
+      match h with
+      | _, c, r ->
+          print_endline
+            ("IN LOOP GUES _ S = " ^ "TODO" ^ "  col: " ^ get_cell_val c
+           ^ "  row: " ^ get_cell_val r);
+          loop_guess t
+    end
+
+let valid_guess (guess_lst : (string * color * color) list) =
+  let _ = loop_guess guess_lst in
+  true
+(* need to first check if they're all in a line (all have same horizontal or
+   same vertical) *)
 
 (** [word_at (x, y) board vertical] returns word starting from [(x,y)] in
     [board] going down if [vertical] is true, and going across if [vertical] is

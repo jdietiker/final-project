@@ -1,5 +1,6 @@
 open Graphics
 open Gameboard
+open Scrabbl
 
 let grid_size = 601
 
@@ -93,15 +94,28 @@ let print_el i j el =
   in
   print_cell i j s
 
+(* custom colors: *)
+let c_empty = Graphics.rgb 217 212 198
+let c_tw = Graphics.rgb 244 93 111
+let c_dw = Graphics.rgb 239 163 176
+let c_tl = Graphics.rgb 17 125 178
+let c_dl = Graphics.rgb 148 209 231
+let c_star = Graphics.rgb 228 137 228
+let c_played = Graphics.rgb 237 210 153
+let c_unplayed = Graphics.rgb 255 243 216
+
+let tile_color (el : Gameboard.elt) =
+  if el_played el = true then c_played else c_unplayed
+
 let print_cell_color i j (el : Gameboard.elt) =
   let color =
     match el_multiplier el with
-    | No -> if el_letter el = "" then white else yellow
-    | TW -> if el_letter el = "" then red else yellow
-    | DW -> if el_letter el = "" then green else yellow
-    | TL -> if el_letter el = "" then blue else yellow
-    | DL -> if el_letter el = "" then cyan else yellow
-    | Star -> if el_letter el = "" then magenta else yellow
+    | No -> if el_letter el = "" then c_empty else tile_color el
+    | TW -> if el_letter el = "" then c_tw else tile_color el
+    | DW -> if el_letter el = "" then c_dw else tile_color el
+    | TL -> if el_letter el = "" then c_tl else tile_color el
+    | DL -> if el_letter el = "" then c_dl else tile_color el
+    | Star -> if el_letter el = "" then c_star else tile_color el
   in
   set_color color;
   fill_rect
@@ -165,6 +179,19 @@ let check_word (changes : (string * int * int) list ref) =
         failwith "TODO"
       else false
 
+(**[was_empty] is false if the cell at a, b was originally a letter *)
+let rec was_empty a b = played_at board a b = false
+
+(**[play_tiles] marks all tiles at values in backpointers to played. *)
+let rec play_tiles backpointers_l =
+  match backpointers_l with
+  | [] -> None
+  | h :: t -> (
+      match h with
+      | _, c1, c2 ->
+          play_letter c1 c2 board;
+          play_tiles t)
+
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
 let rec loop (selected : (int * int) ref)
@@ -182,9 +209,18 @@ let rec loop (selected : (int * int) ref)
       match !selected with
       | -1, -1 -> ()
       | a, b ->
-          backpointers := (letter_at board a b, a, b) :: !backpointers;
-          set_letter a b board (String.uppercase_ascii letter))
-    else if letter = "/" then backpointers := []
+          if was_empty a b then (
+            (* only changing the cell if there is not already a tile played
+               there. *)
+            backpointers := (letter_at board a b, a, b) :: !backpointers;
+            set_letter a b board (String.uppercase_ascii letter)))
+    else if letter = "/" then (
+      (* They entered their gues, check if it is valid: *)
+      (if valid_guess !backpointers then
+         let _ = play_tiles !backpointers in
+         print_endline "valid");
+
+      backpointers := [])
     else if letter = " " then reset_turn backpointers)
   else if e.button then (
     let xpos = e.mouse_x in

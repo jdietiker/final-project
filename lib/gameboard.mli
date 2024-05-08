@@ -30,11 +30,18 @@ val multiplier_at : t -> int -> int -> multiplier
 val letter_at : t -> int -> int -> string
 (** [letter_at board i j] is the letter stored at row [i], column [j] in [board]*)
 
+val played_at : t -> int -> int -> bool
+(**[played_at board i j] is the boolean of whether the letter at i, j has been
+   played.*)
+
 val el_multiplier : elt -> multiplier
 (** [el_multiplier el] is the multiplier stored in element [el] *)
 
 val el_letter : elt -> string
 (** [el_letter el] is the letter stored in element [el] *)
+
+val el_played : elt -> bool
+(** [el_played el] is the value of played stored in element [el] *)
 
 val el_at : t -> int -> int -> elt
 (** [el_at board i j] is the element stored stored at row [i], column [j] in
@@ -44,3 +51,9 @@ val length : t -> int
 (** [length board] is the length of [board] *)
 
 val set_letter : int -> int -> t -> string -> unit
+(** [set_letter r c board s] sets the letter at row [r] and col [c] of [board]
+    to [s] *)
+
+val play_letter : int -> int -> t -> unit
+(** [play_letter r c board] sets the letter at row [r] and col [c] of [board] to
+    be played. *)

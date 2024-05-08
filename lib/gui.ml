@@ -215,10 +215,12 @@ let rec loop (selected : (int * int) ref)
             backpointers := (letter_at board a b, a, b) :: !backpointers;
             set_letter a b board (String.uppercase_ascii letter)))
     else if letter = "/" then (
-      (* They entered their gues, check if it is valid: *)
-      (if valid_guess !backpointers then
-         let _ = play_tiles !backpointers in
-         print_endline "valid");
+      (* They entered their gues, check if it is valid. If it is, play it,
+         otherwise reset.*)
+      if valid_guess board !backpointers then
+        let _ = play_tiles !backpointers in
+        print_endline "valid"
+      else reset_turn backpointers;
 
       backpointers := [])
     else if letter = " " then reset_turn backpointers)

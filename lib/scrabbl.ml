@@ -33,23 +33,35 @@ let get_cell_val (c : color) : string =
   else if c = 4 then "14"
   else "15"
 
-let rec loop_guess lst =
+let rec loop_guess board (lst : (string * color * color) list)
+    (cols_lst, rows_lst) =
   match lst with
-  | [] -> 0
+  | [] -> (cols_lst, rows_lst)
   | h :: t -> begin
       match h with
       | _, c, r ->
+          let s = letter_at board c r in
+          let cols_lst_new =
+            if List.mem c cols_lst = false then List.append cols_lst [ c ]
+            else cols_lst
+          in
+          let rows_lst_new =
+            if List.mem r rows_lst = false then List.append rows_lst [ r ]
+            else rows_lst
+          in
+
           print_endline
-            ("IN LOOP GUES _ S = " ^ "TODO" ^ "  col: " ^ get_cell_val c
-           ^ "  row: " ^ get_cell_val r);
-          loop_guess t
+            ("IN LOOP GUES _ S = " ^ s ^ "  col: " ^ get_cell_val c ^ "  row: "
+           ^ get_cell_val r);
+          loop_guess board t (cols_lst_new, rows_lst_new)
     end
 
-let valid_guess (guess_lst : (string * color * color) list) =
-  let _ = loop_guess guess_lst in
-  true
-(* need to first check if they're all in a line (all have same horizontal or
-   same vertical) *)
+(* CURRENTLY: checks if all the played tiles are either in 1 row or in 1 col,
+   TODO - check if they are all together *)
+let valid_guess (board : Gameboard.t)
+    (guess_lst : (string * color * color) list) =
+  let cols, rows = loop_guess board guess_lst ([], []) in
+  if List.length cols <> 1 && List.length rows <> 1 then false else true
 
 (** [word_at (x, y) board vertical] returns word starting from [(x,y)] in
     [board] going down if [vertical] is true, and going across if [vertical] is

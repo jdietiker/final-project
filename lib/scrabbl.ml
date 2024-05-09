@@ -14,6 +14,35 @@ let valid_word str = StringSet.mem str dict
 
 open Gameboard
 
+(**[point_val] is the point value of the letter entered:*)
+let point_val l =
+  if l = "A" then 1
+  else if l = "B" then 3
+  else if l = "C" then 3
+  else if l = "D" then 2
+  else if l = "E" then 1
+  else if l = "F" then 4
+  else if l = "G" then 2
+  else if l = "H" then 4
+  else if l = "I" then 1
+  else if l = "J" then 8
+  else if l = "K" then 5
+  else if l = "L" then 1
+  else if l = "M" then 3
+  else if l = "N" then 1
+  else if l = "O" then 1
+  else if l = "P" then 3
+  else if l = "Q" then 10
+  else if l = "R" then 1
+  else if l = "S" then 1
+  else if l = "T" then 1
+  else if l = "U" then 1
+  else if l = "V" then 4
+  else if l = "W" then 4
+  else if l = "X" then 8
+  else if l = "Y" then 4
+  else 10
+
 let rec loop_guess board (lst : (string * color * color) list)
     (cols_lst, rows_lst) =
   match lst with
@@ -159,17 +188,54 @@ let get_all_words (board : Gameboard.t)
 
         Some !words_lst
 
+(**[get_points] get the point value of the word [word] which starts at col: [sc]
+   and row: [sr]*)
+let get_points word sc sr vert board =
+  let points = ref 0 in
+  let word_multiplier = ref 1 in
+
+  for i = 0 to String.length word - 1 do
+    let this_row = if vert then sr + i else sr in
+    let this_col = if vert then sc else sc + i in
+    let this_letter = letter_at board this_col this_row in
+    let this_base_points = point_val this_letter in
+
+    if played_at board this_row this_col then
+      points := !points + this_base_points
+    else
+      match multiplier_at board this_row this_col with
+      | TW ->
+          word_multiplier := 3 * !word_multiplier;
+          points := !points + this_base_points
+      | DW ->
+          word_multiplier := 2 * !word_multiplier;
+          points := !points + this_base_points
+      | TL -> points := !points + (3 * this_base_points)
+      | DL -> points := !points + (2 * this_base_points)
+      | Star ->
+          word_multiplier := 2 * !word_multiplier;
+          points := !points + this_base_points
+      | No -> points := !points + this_base_points
+  done;
+  !points * !word_multiplier
+
 (** [eval_all_words] evaluates the list of all words in this user's guess: *)
-let rec eval_all_words words_lst points =
+let rec eval_all_words words_lst points board =
   match words_lst with
   | [] -> points
   | h :: t -> (
-      match h with
-      | word, sc, sr, vert ->
-          print_endline
-            ("WORD: " ^ word ^ " SC: " ^ string_of_int sc ^ "  SR: "
-           ^ string_of_int sr ^ " vert: " ^ string_of_bool vert);
-          eval_all_words t (points + 1))
+      if points = -1 then -1
+      else
+        match h with
+        | word, sc, sr, vert ->
+            print_endline
+              ("WORD: " ^ word ^ " SC: " ^ string_of_int sc ^ "  SR: "
+             ^ string_of_int sr ^ " vert: " ^ string_of_bool vert);
+
+            if valid_word word then
+              let this_points = get_points word sc sr vert board in
+              eval_all_words t (points + this_points) board
+            else eval_all_words t (-1) board)
 
 (** [eval_guess] returns the point value of the user's guess - <0 if it is not a
     valid guess*)
@@ -181,7 +247,7 @@ let eval_guess (board : Gameboard.t) (guess_lst : (string * color * color) list)
       if List.length words_lst = 0 then -1
       else (
         print_endline "ALL VALID WORDS: ";
-        let points = eval_all_words words_lst 0 in
+        let points = eval_all_words words_lst 0 board in
         points)
 
 (** [word_at (x, y) board vertical] returns word starting from [(x,y)] in
@@ -199,29 +265,3 @@ let rec word_at (x, y) (board : Gameboard.t) (vertical : bool) =
       if chr != "" && x != length board then
         chr ^ word_at (x + 1, y) board false
       else ""
-
-(** [grade_word_aux (x,y) board vertical] grades the word in [board] starting
-    from coordinates [(x, y)] and going either down or across, depending on
-    [vertical], and returns the int corresponding to its score. (or 0 if the
-    word ends or the board ends).*)
-let grade_word_aux (x, y) (board : Gameboard.t) (vertical : bool) =
-  match vertical with
-  | true -> begin
-      let chr, mult = (letter_at board x y, multiplier_at board x y) in
-      if chr = "" || x = length board then 0
-      else
-        match mult with
-        | TW -> 0
-        | DW -> 0
-        | TL -> 0
-        | DL -> 0
-        | Star -> 0
-        | No -> 0
-    end
-  | false -> 1
-
-(** INCOMPLETE SORRY GUYS *)
-let grade_word (x, y) (board : Gameboard.t) (vertical : bool) =
-  match vertical with
-  | true -> if not (valid_word (word_at (x, y) board true)) then 0 else 0
-  | false -> 1

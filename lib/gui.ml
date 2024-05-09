@@ -217,9 +217,10 @@ let rec loop (selected : (int * int) ref)
     else if letter = "/" then (
       (* They entered their gues, check if it is valid. If it is, play it,
          otherwise reset.*)
-      if eval_guess board !backpointers >= 0 then
+      let points = eval_guess board !backpointers in
+      if points >= 0 then
         let _ = play_tiles !backpointers in
-        print_endline "valid word entered"
+        print_endline ("Total points earned: " ^ string_of_int points)
       else reset_turn backpointers;
 
       backpointers := [])

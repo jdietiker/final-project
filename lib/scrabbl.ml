@@ -41,7 +41,8 @@ let point_val l =
   else if l = "W" then 4
   else if l = "X" then 8
   else if l = "Y" then 4
-  else 10
+  else if l = "Z" then 10
+  else 0
 
 let rec loop_guess board (lst : (string * color * color) list)
     (cols_lst, rows_lst) =
@@ -200,7 +201,7 @@ let get_points word sc sr vert board =
     let this_letter = letter_at board this_col this_row in
     let this_base_points = point_val this_letter in
 
-    if played_at board this_row this_col then
+    if played_at board this_col this_row then
       points := !points + this_base_points
     else
       match multiplier_at board this_row this_col with
@@ -228,10 +229,6 @@ let rec eval_all_words words_lst points board =
       else
         match h with
         | word, sc, sr, vert ->
-            print_endline
-              ("WORD: " ^ word ^ " SC: " ^ string_of_int sc ^ "  SR: "
-             ^ string_of_int sr ^ " vert: " ^ string_of_bool vert);
-
             if valid_word word then
               let this_points = get_points word sc sr vert board in
               eval_all_words t (points + this_points) board
@@ -245,23 +242,6 @@ let eval_guess (board : Gameboard.t) (guess_lst : (string * color * color) list)
   | None -> -1
   | Some words_lst ->
       if List.length words_lst = 0 then -1
-      else (
-        print_endline "ALL VALID WORDS: ";
+      else
         let points = eval_all_words words_lst 0 board in
-        points)
-
-(** [word_at (x, y) board vertical] returns word starting from [(x,y)] in
-    [board] going down if [vertical] is true, and going across if [vertical] is
-    false. It stops recording the word if there's a gap or reaches the end of
-    the board.*)
-let rec word_at (x, y) (board : Gameboard.t) (vertical : bool) =
-  match vertical with
-  | true ->
-      let chr = letter_at board x y in
-      if chr != "" && y != length board then chr ^ word_at (x, y + 1) board true
-      else ""
-  | false ->
-      let chr = letter_at board x y in
-      if chr != "" && x != length board then
-        chr ^ word_at (x + 1, y) board false
-      else ""
+        points

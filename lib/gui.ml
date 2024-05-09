@@ -73,12 +73,23 @@ let draw_grid =
 (** prints the ith cell in the jth column of board. *)
 let print_cell i j s =
   let a, b = text_size s in
+  let vert_move = a + 1 in
+  let hor_move = b - 3 in
+  let points = if point_val s = 0 then "" else string_of_int (point_val s) in
   moveto
     ((grid_size / 15 * i) + (grid_size / 30) - (a / 2) + 1)
     (grid_size - ((grid_size / 15 * j) + (grid_size / 30) + (b / 2) + 2));
-  set_text_size 50;
   set_color black;
-  draw_string s
+  set_text_size 60;
+  draw_string s;
+
+  moveto
+    ((grid_size / 15 * i) + (grid_size / 30) - (a / 2) + 1 + vert_move)
+    (grid_size
+    - ((grid_size / 15 * j) + (grid_size / 30) + (b / 2) + 2)
+    - hor_move);
+  set_color (Graphics.rgb 151 151 151);
+  draw_string points
 
 let print_el i j el =
   let s =

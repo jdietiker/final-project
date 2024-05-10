@@ -234,6 +234,53 @@ let rec eval_all_words words_lst points board =
               eval_all_words t (points + this_points) board
             else eval_all_words t (-1) board)
 
+(** [check_over_star] checks if any of the words in [words_lst] go over the star
+    multiplier. *)
+let rec check_over_star words_lst b board =
+  match words_lst with
+  | [] -> b
+  | h :: t -> (
+      if (* already went over star, don't need to check: *)
+         b then true
+      else
+        match h with
+        | word, sc, sr, vert ->
+            let b_ref = ref false in
+            for i = 0 to String.length word - 1 do
+              let this_row = if vert then sr + i else sr in
+              let this_col = if vert then sc else sc + i in
+              match multiplier_at board this_row this_col with
+              | Star -> b_ref := true
+              | _ -> b_ref := !b_ref
+            done;
+            check_over_star t !b_ref board)
+
+(** [check_connecting] checks if any of the words in [words_lst] are connected
+    to an existing word (contain at least one already played letter). *)
+let rec check_connecting words_lst b board =
+  match words_lst with
+  | [] -> b
+  | h :: t -> (
+      if (* already know it is connecting, don't need to check: *)
+         b then true
+      else
+        match h with
+        | word, sc, sr, vert ->
+            let b_ref = ref false in
+            for i = 0 to String.length word - 1 do
+              let this_row = if vert then sr + i else sr in
+              let this_col = if vert then sc else sc + i in
+              if played_at board this_col this_row then b_ref := true
+            done;
+            check_connecting t !b_ref board)
+
+(** [checks_connectng_aux] runs the helper functions to check if any of the
+    words in word_lst are connected to an existing word or if the board is
+    empty, that the user played across a star. *)
+let check_connecting_aux lst board =
+  if is_empty board then check_over_star lst false board
+  else check_connecting lst false board
+
 (** [eval_guess] returns the point value of the user's guess - <0 if it is not a
     valid guess*)
 let eval_guess (board : Gameboard.t) (guess_lst : (string * color * color) list)
@@ -242,6 +289,8 @@ let eval_guess (board : Gameboard.t) (guess_lst : (string * color * color) list)
   | None -> -1
   | Some words_lst ->
       if List.length words_lst = 0 then -1
-      else
-        let points = eval_all_words words_lst 0 board in
-        points
+      else if
+        (* check if it was a valid connecting move, if so calculate points *)
+        check_connecting_aux words_lst board
+      then eval_all_words words_lst 0 board
+      else -1

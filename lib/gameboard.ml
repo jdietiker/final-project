@@ -568,3 +568,12 @@ let el_played (el : elt) =
 
 let el_at (board : t) i j = board.(i).(j)
 let length (board : t) = Array.length board
+
+let is_empty (board : t) =
+  let empty = ref true in
+  for i = 0 to Array.length board - 1 do
+    for j = 0 to Array.length (Array.get board 0) - 1 do
+      if played_at board i j then empty := false
+    done
+  done;
+  !empty

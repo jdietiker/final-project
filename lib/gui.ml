@@ -2,6 +2,7 @@ open Graphics
 open Gameboard
 open Scrabbl
 
+let () = Random.self_init ()
 let info_section_size = 120
 let grid_size = 601
 
@@ -264,11 +265,41 @@ let rec play_tiles backpointers_l =
           play_letter c1 c2 board;
           play_tiles t)
 
+(** [remove_tile] removes a tile with "letter" from the tile list and returns
+    the new list. *)
+let rec remove_tile lst letter =
+  match lst with
+  | [] -> []
+  | h :: t -> if h = letter then t else h :: remove_tile t letter
+
+(** todo - temp*)
+let print_lst l =
+  let rec iter_lst s ls =
+    match ls with
+    | [] -> s
+    | h :: t -> iter_lst (s ^ h) t
+  in
+  print_endline (iter_lst "" l)
+
+(**[draw_tiles] draws tiles from tile_bag until tile_lst has 7 letters. *)
+let draw_tiles tile_lst tile_bag =
+  if List.length tile_bag = 0 then (tile_lst, tile_bag)
+  else
+    let new_tile_lst = ref tile_lst in
+    let new_tile_bag = ref tile_bag in
+    while List.length !new_tile_lst < 7 && List.length !new_tile_bag > 0 do
+      let index = Random.int (List.length !new_tile_bag) in
+      let tile = List.nth !new_tile_bag index in
+      new_tile_bag := remove_tile !new_tile_bag tile;
+      new_tile_lst := !new_tile_lst @ [ tile ]
+    done;
+    (!new_tile_lst, !new_tile_bag)
+
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
 let rec loop (selected : (int * int) ref)
     (backpointers : (string * int * int) list ref) p1_points p2_points p1_tiles
-    p2_tiles tiles_bag player1 : unit =
+    p2_tiles tiles_bag player1 tiles_backpointer : unit =
   draw_grid;
   print_board board;
   let tile_list = if !player1 then !p1_tiles else !p2_tiles in
@@ -284,28 +315,47 @@ let rec loop (selected : (int * int) ref)
       match !selected with
       | -1, -1 -> ()
       | a, b ->
-          if was_empty a b then (
+          let curr_lst = if !player1 then !p1_tiles else !p2_tiles in
+          if was_empty a b && List.mem (String.uppercase_ascii letter) curr_lst
+          then (
             (* only changing the cell if there is not already a tile played
                there. *)
             backpointers := (letter_at board a b, a, b) :: !backpointers;
-            set_letter a b board (String.uppercase_ascii letter)))
+            set_letter a b board (String.uppercase_ascii letter);
+            if !player1 then
+              p1_tiles := remove_tile !p1_tiles (String.uppercase_ascii letter)
+            else
+              p2_tiles := remove_tile !p2_tiles (String.uppercase_ascii letter)))
     else if letter = "/" then (
       (* They entered their gues, check if it is valid. If it is, play it,
          otherwise reset.*)
       let points = eval_guess board !backpointers in
-      if points >= 0 then (
+      if points >= 0 then
         let _ = play_tiles !backpointers in
         if !player1 then (
           player1 := false;
-          p1_points := !p1_points + points)
+          p1_points := !p1_points + points;
+          tiles_backpointer := !p2_tiles;
+          let tl, tb = draw_tiles !p1_tiles !tiles_bag in
+          p1_tiles := tl;
+          tiles_bag := tb)
         else (
           player1 := true;
-          p2_points := !p2_points + points);
-        print_endline ("Total points earned: " ^ string_of_int points))
-      else reset_turn backpointers;
+          p2_points := !p2_points + points;
+          tiles_backpointer := !p1_tiles;
+          let tl, tb = draw_tiles !p2_tiles !tiles_bag in
+          p2_tiles := tl;
+          tiles_bag := tb)
+      else (
+        reset_turn backpointers;
+        if !player1 then p1_tiles := !tiles_backpointer
+        else p2_tiles := !tiles_backpointer);
 
       backpointers := [])
-    else if letter = " " then reset_turn backpointers)
+    else if letter = " " then (
+      reset_turn backpointers;
+      if !player1 then p1_tiles := !tiles_backpointer
+      else p2_tiles := !tiles_backpointer))
   else if e.button then (
     let xpos = e.mouse_x in
     let ypos = e.mouse_y in
@@ -316,4 +366,4 @@ let rec loop (selected : (int * int) ref)
     paint_outline !selected);
 
   loop selected backpointers p1_points p2_points p1_tiles p2_tiles tiles_bag
-    player1
+    player1 tiles_backpointer

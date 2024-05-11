@@ -12,5 +12,6 @@ val loop :
   string list ref ->
   bool ref ->
   string list ref ->
+  bool ref ->
   unit
 (**[loop] loops through player turns*)

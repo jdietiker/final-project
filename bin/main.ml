@@ -112,4 +112,4 @@ let () =
   loop
     (ref (-1, -1))
     (ref []) (ref 0) (ref 0) (ref p1_tiles) (ref p2_tiles) (ref tiles_bag)
-    (ref true) (ref p1_tiles)
+    (ref true) (ref p1_tiles) (ref false)

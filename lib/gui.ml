@@ -251,13 +251,21 @@ let rec final_extra_points tiles_lst p =
       let points = point_val h in
       final_extra_points t (p + points)
 
-(* let selected : (int * int) ref = ref (-1, -1) let backpointers : (string *
-   int * int) list ref = ref [] let p1_points = ref 0 let p2_points = ref 0 let
-   p1_tiles : string list ref = ref [] let p2_tiles : string list ref = ref []
-   let tiles_bag : string list ref = ref [] let player1 = ref true let
-   tiles_backpointer : string list ref = ref [] let game_over = ref false *)
+let init_tile_bag = Array.to_list (Arg.read_arg "data/bag.txt")
+let p1_tiles_i, bag1 = draw_tiles [] init_tile_bag
+let p2_tiles_i, tiles_bag_i = draw_tiles [] bag1
+let p1_points = ref 0
+let p2_points = ref 0
+let p1_tiles : string list ref = ref p1_tiles_i
+let p2_tiles : string list ref = ref p2_tiles_i
+let tiles_bag : string list ref = ref tiles_bag_i
+let selected : (int * int) ref = ref (-1, -1)
+let backpointers : (string * int * int) list ref = ref []
+let player1 = ref true
+let tiles_backpointer : string list ref = ref []
+let game_over = ref false
 
-let enter_cell backpointers letter player1 p1_tiles p2_tiles = function
+let enter_cell letter = function
   | -1, -1 -> ()
   | a, b ->
       let curr_lst = if !player1 then !p1_tiles else !p2_tiles in
@@ -270,7 +278,7 @@ let enter_cell backpointers letter player1 p1_tiles p2_tiles = function
           p1_tiles := remove_tile !p1_tiles (String.uppercase_ascii letter)
         else p2_tiles := remove_tile !p2_tiles (String.uppercase_ascii letter))
 
-let end_game game_over p1_tiles p1_points p2_tiles p2_points =
+let end_game () =
   game_over := true;
 
   if List.length !p1_tiles = 0 then (
@@ -295,8 +303,7 @@ let end_game game_over p1_tiles p1_points p2_tiles p2_points =
   print_endline "GAME OVER!";
   print_endline s
 
-let try_guess backpointers tiles_backpointer tiles_bag player1 p1_points
-    p1_tiles p2_points p2_tiles game_over =
+let try_guess () =
   let points = eval_guess board !backpointers in
   if points >= 0 then (
     let _ = play_tiles !backpointers in
@@ -317,7 +324,7 @@ let try_guess backpointers tiles_backpointer tiles_bag player1 p1_points
     if
       List.length !tiles_bag = 0
       && (List.length !p2_tiles = 0 || List.length !p1_tiles = 0)
-    then end_game game_over p1_tiles p1_points p2_tiles p2_points)
+    then end_game ())
   else (
     reset_turn backpointers;
     if !player1 then p1_tiles := !tiles_backpointer
@@ -327,9 +334,7 @@ let try_guess backpointers tiles_backpointer tiles_bag player1 p1_points
 
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
-let rec loop (selected : (int * int) ref)
-    (backpointers : (string * int * int) list ref) p1_points p2_points p1_tiles
-    p2_tiles tiles_bag player1 tiles_backpointer game_over : unit =
+let rec loop () : unit =
   draw_grid;
   print_board board;
   let tile_list = if !player1 then !p1_tiles else !p2_tiles in
@@ -341,13 +346,11 @@ let rec loop (selected : (int * int) ref)
   if e.keypressed then (
     let letter = String.make 1 e.key in
     (* They entered a letter, so we put it on the board. *)
-    if List.mem letter alphabet then
-      enter_cell backpointers letter player1 p1_tiles p2_tiles !selected
+    if List.mem letter alphabet then enter_cell letter !selected
     else if letter = "/" then
       (* They entered their guess, check if it is valid. If it is, play it,
          otherwise reset.*)
-      try_guess backpointers tiles_backpointer tiles_bag player1 p1_points
-        p1_tiles p2_points p2_tiles game_over
+      try_guess ()
       (* They are canceling turn, so we undo their placed letters. *)
     else if letter = " " then (
       reset_turn backpointers;
@@ -362,6 +365,4 @@ let rec loop (selected : (int * int) ref)
     print_info !p1_points !p2_points !player1 [] !tiles_bag;
     paint_outline !selected);
 
-  if !game_over = false then
-    loop selected backpointers p1_points p2_points p1_tiles p2_tiles tiles_bag
-      player1 tiles_backpointer game_over
+  if !game_over = false then loop ()

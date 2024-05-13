@@ -26,8 +26,11 @@ let point_val l =
     List.assoc l (convert_assoc "data/points.csv")
   else 0
 
-let rec loop_guess board (lst : (string * color * color) list)
-    (cols_lst, rows_lst) =
+(** [loop_guess board lst (cols,rows)] inputs a list of letters with
+    coordinates, and returns a pair of lists of the columns and rows that they
+    are in. *)
+let rec loop_guess board (lst : (string * int * int) list) (cols_lst, rows_lst)
+    =
   match lst with
   | [] -> (cols_lst, rows_lst)
   | h :: t -> begin
@@ -50,8 +53,10 @@ let min_value lst =
   | [] -> -1
   | hd :: tl -> List.fold_left min hd tl
 
-(** [get_word] is a tuple of (valid, word) where valid is true if there are no
-    gaps and word is the string entered *)
+(** [get_word x y len board v] is a tuple of (valid, word, start col, start row,
+    vertical) where valid is true if there are no gaps and word is the string
+    entered, start col and start row are the beginning of the entered string,
+    and vertical is true if the word is vertical *)
 let get_word start_col start_row length board (vertical : bool) =
   let this_col = ref start_col in
   let this_row = ref start_row in
@@ -82,6 +87,34 @@ let valid_pos board guess_lst =
     if List.length cols = 1 then get_word min_col min_row len board true
     else get_word min_col min_row len board false
 
+(** check_before checks if there are any letters before the current word and if
+    so, adds them to the beginning of the word.*)
+let check_before s_col s_row this_col this_row full_word vertical board =
+  let i = ref 1 in
+  while !i > 0 do
+    if vertical then this_row := !this_row - 1 else this_col := !this_col - 1;
+    if !this_row >= 0 && !this_col >= 0 then
+      if played_at board !this_col !this_row then (
+        s_col := !this_col;
+        s_row := !this_row;
+        full_word := letter_at board !this_col !this_row ^ !full_word)
+      else i := 0
+    else i := 0
+  done
+
+(** check_after checks if there are any letters after the current word and if
+    so, adds them to the end of the word.*)
+let check_after this_col this_row full_word vertical board : unit =
+  let i = ref 1 in
+  while !i > 0 do
+    if vertical then this_row := !this_row + 1 else this_col := !this_col + 1;
+    if !this_row <= 14 && !this_col <= 14 then
+      if played_at board !this_col !this_row then
+        full_word := !full_word ^ letter_at board !this_col !this_row
+      else i := 0
+    else i := 0
+  done
+
 (**[extend_word] iterates above and below the word to add any existing
    connecting tiles. returns (full_word, start_c, start_r, vert) which is the
    full word, the starting column, starting row, and whether it is vertical *)
@@ -93,17 +126,7 @@ let extend_word start_col start_row word vertical board =
   let this_col = ref start_col in
   let this_row = ref start_row in
   (* iterate above word: *)
-  let i = ref 1 in
-  while !i > 0 do
-    if vertical then this_row := !this_row - 1 else this_col := !this_col - 1;
-    if !this_row >= 0 && !this_col >= 0 then
-      if played_at board !this_col !this_row then (
-        s_col := !this_col;
-        s_row := !this_row;
-        full_word := letter_at board !this_col !this_row ^ !full_word)
-      else i := 0
-    else i := 0
-  done;
+  check_before s_col s_row this_col this_row full_word vertical board;
 
   this_col := start_col;
   this_row := start_row;
@@ -111,15 +134,7 @@ let extend_word start_col start_row word vertical board =
   else this_col := start_col + String.length word - 1;
 
   (* iterate below word: *)
-  let i = ref 1 in
-  while !i > 0 do
-    if vertical then this_row := !this_row + 1 else this_col := !this_col + 1;
-    if !this_row <= 14 && !this_col <= 14 then
-      if played_at board !this_col !this_row then
-        full_word := !full_word ^ letter_at board !this_col !this_row
-      else i := 0
-    else i := 0
-  done;
+  check_after this_col this_row full_word vertical board;
   (* return final value: *)
   (!full_word, !s_col, !s_row)
 
@@ -171,6 +186,22 @@ let get_all_words (board : Gameboard.t)
 
         Some !words_lst
 
+(** [grade_aux wmult pts base] augments the word multiplier and the word points
+    based on the multiplier and letter for the current box*)
+let grade_aux word_multiplier points this_base_points = function
+  | TW ->
+      word_multiplier := 3 * !word_multiplier;
+      points := !points + this_base_points
+  | DW ->
+      word_multiplier := 2 * !word_multiplier;
+      points := !points + this_base_points
+  | TL -> points := !points + (3 * this_base_points)
+  | DL -> points := !points + (2 * this_base_points)
+  | Star ->
+      word_multiplier := 2 * !word_multiplier;
+      points := !points + this_base_points
+  | No -> points := !points + this_base_points
+
 (**[get_points] get the point value of the word [word] which starts at col: [sc]
    and row: [sr]*)
 let get_points word sc sr vert board =
@@ -186,19 +217,8 @@ let get_points word sc sr vert board =
     if played_at board this_col this_row then
       points := !points + this_base_points
     else
-      match multiplier_at board this_row this_col with
-      | TW ->
-          word_multiplier := 3 * !word_multiplier;
-          points := !points + this_base_points
-      | DW ->
-          word_multiplier := 2 * !word_multiplier;
-          points := !points + this_base_points
-      | TL -> points := !points + (3 * this_base_points)
-      | DL -> points := !points + (2 * this_base_points)
-      | Star ->
-          word_multiplier := 2 * !word_multiplier;
-          points := !points + this_base_points
-      | No -> points := !points + this_base_points
+      let mult = multiplier_at board this_row this_col in
+      grade_aux word_multiplier points this_base_points mult
   done;
   !points * !word_multiplier
 

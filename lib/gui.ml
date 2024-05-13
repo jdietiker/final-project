@@ -251,6 +251,80 @@ let rec final_extra_points tiles_lst p =
       let points = point_val h in
       final_extra_points t (p + points)
 
+(* let selected : (int * int) ref = ref (-1, -1) let backpointers : (string *
+   int * int) list ref = ref [] let p1_points = ref 0 let p2_points = ref 0 let
+   p1_tiles : string list ref = ref [] let p2_tiles : string list ref = ref []
+   let tiles_bag : string list ref = ref [] let player1 = ref true let
+   tiles_backpointer : string list ref = ref [] let game_over = ref false *)
+
+let enter_cell backpointers letter player1 p1_tiles p2_tiles = function
+  | -1, -1 -> ()
+  | a, b ->
+      let curr_lst = if !player1 then !p1_tiles else !p2_tiles in
+      if was_empty a b && List.mem (String.uppercase_ascii letter) curr_lst then (
+        (* only changing the cell if there is not already a tile played
+           there. *)
+        backpointers := (letter_at board a b, a, b) :: !backpointers;
+        set_letter a b board (String.uppercase_ascii letter);
+        if !player1 then
+          p1_tiles := remove_tile !p1_tiles (String.uppercase_ascii letter)
+        else p2_tiles := remove_tile !p2_tiles (String.uppercase_ascii letter))
+
+let end_game game_over p1_tiles p1_points p2_tiles p2_points =
+  game_over := true;
+
+  if List.length !p1_tiles = 0 then (
+    p1_points := !p1_points + final_extra_points !p2_tiles 0;
+    p2_points := !p1_points - final_extra_points !p2_tiles 0)
+  else (
+    p2_points := !p2_points + final_extra_points !p1_tiles 0;
+    p1_points := !p1_points - final_extra_points !p1_tiles 0);
+
+  let s =
+    if !p1_points > !p2_points then
+      "Player 1 wins!\n\nPlayer 1 points: " ^ string_of_int !p1_points
+      ^ "\nPlayer 2 points: " ^ string_of_int !p2_points
+    else if !p2_points > !p1_points then
+      "Player 2 wins!\n\nPlayer 2 points: " ^ string_of_int !p2_points
+      ^ "\nPlayer 1 points: " ^ string_of_int !p1_points
+    else
+      "Tie!\n\nPlayer 1 points: " ^ string_of_int !p1_points
+      ^ "\nPlayer 2 points: " ^ string_of_int !p2_points
+  in
+  Unix.sleepf 2.0;
+  print_endline "GAME OVER!";
+  print_endline s
+
+let try_guess backpointers tiles_backpointer tiles_bag player1 p1_points
+    p1_tiles p2_points p2_tiles game_over =
+  let points = eval_guess board !backpointers in
+  if points >= 0 then (
+    let _ = play_tiles !backpointers in
+    if !player1 then (
+      player1 := false;
+      p1_points := !p1_points + points;
+      tiles_backpointer := !p2_tiles;
+      let tl, tb = draw_tiles !p1_tiles !tiles_bag in
+      p1_tiles := tl;
+      tiles_bag := tb)
+    else (
+      player1 := true;
+      p2_points := !p2_points + points;
+      tiles_backpointer := !p1_tiles;
+      let tl, tb = draw_tiles !p2_tiles !tiles_bag in
+      p2_tiles := tl;
+      tiles_bag := tb);
+    if
+      List.length !tiles_bag = 0
+      && (List.length !p2_tiles = 0 || List.length !p1_tiles = 0)
+    then end_game game_over p1_tiles p1_points p2_tiles p2_points)
+  else (
+    reset_turn backpointers;
+    if !player1 then p1_tiles := !tiles_backpointer
+    else p2_tiles := !tiles_backpointer);
+
+  backpointers := []
+
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
 let rec loop (selected : (int * int) ref)
@@ -266,75 +340,15 @@ let rec loop (selected : (int * int) ref)
 
   if e.keypressed then (
     let letter = String.make 1 e.key in
-
-    if List.mem letter alphabet then (
-      match !selected with
-      | -1, -1 -> ()
-      | a, b ->
-          let curr_lst = if !player1 then !p1_tiles else !p2_tiles in
-          if was_empty a b && List.mem (String.uppercase_ascii letter) curr_lst
-          then (
-            (* only changing the cell if there is not already a tile played
-               there. *)
-            backpointers := (letter_at board a b, a, b) :: !backpointers;
-            set_letter a b board (String.uppercase_ascii letter);
-            if !player1 then
-              p1_tiles := remove_tile !p1_tiles (String.uppercase_ascii letter)
-            else
-              p2_tiles := remove_tile !p2_tiles (String.uppercase_ascii letter)))
-    else if letter = "/" then (
+    (* They entered a letter, so we put it on the board. *)
+    if List.mem letter alphabet then
+      enter_cell backpointers letter player1 p1_tiles p2_tiles !selected
+    else if letter = "/" then
       (* They entered their guess, check if it is valid. If it is, play it,
          otherwise reset.*)
-      let points = eval_guess board !backpointers in
-      if points >= 0 then (
-        let _ = play_tiles !backpointers in
-        if !player1 then (
-          player1 := false;
-          p1_points := !p1_points + points;
-          tiles_backpointer := !p2_tiles;
-          let tl, tb = draw_tiles !p1_tiles !tiles_bag in
-          p1_tiles := tl;
-          tiles_bag := tb)
-        else (
-          player1 := true;
-          p2_points := !p2_points + points;
-          tiles_backpointer := !p1_tiles;
-          let tl, tb = draw_tiles !p2_tiles !tiles_bag in
-          p2_tiles := tl;
-          tiles_bag := tb);
-        if
-          List.length !tiles_bag = 0
-          && (List.length !p2_tiles = 0 || List.length !p1_tiles = 0)
-        then (
-          game_over := true;
-
-          if List.length !p1_tiles = 0 then (
-            p1_points := !p1_points + final_extra_points !p2_tiles 0;
-            p2_points := !p1_points - final_extra_points !p2_tiles 0)
-          else (
-            p2_points := !p2_points + final_extra_points !p1_tiles 0;
-            p1_points := !p1_points - final_extra_points !p1_tiles 0);
-
-          let s =
-            if !p1_points > !p2_points then
-              "Player 1 wins!\n\nPlayer 1 points: " ^ string_of_int !p1_points
-              ^ "\nPlayer 2 points: " ^ string_of_int !p2_points
-            else if !p2_points > !p1_points then
-              "Player 2 wins!\n\nPlayer 2 points: " ^ string_of_int !p2_points
-              ^ "\nPlayer 1 points: " ^ string_of_int !p1_points
-            else
-              "Tie!\n\nPlayer 1 points: " ^ string_of_int !p1_points
-              ^ "\nPlayer 2 points: " ^ string_of_int !p2_points
-          in
-          Unix.sleepf 2.0;
-          print_endline "GAME OVER!";
-          print_endline s))
-      else (
-        reset_turn backpointers;
-        if !player1 then p1_tiles := !tiles_backpointer
-        else p2_tiles := !tiles_backpointer);
-
-      backpointers := [])
+      try_guess backpointers tiles_backpointer tiles_bag player1 p1_points
+        p1_tiles p2_points p2_tiles game_over
+      (* They are canceling turn, so we undo their placed letters. *)
     else if letter = " " then (
       reset_turn backpointers;
       if !player1 then p1_tiles := !tiles_backpointer

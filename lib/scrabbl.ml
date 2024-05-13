@@ -14,34 +14,16 @@ let valid_word str = StringSet.mem str dict
 
 open Gameboard
 
+let convert_assoc csv =
+  let lst = Csv.load csv in
+  let letter = List.hd lst in
+  let points = List.map int_of_string (List.hd (List.tl lst)) in
+  List.combine letter points
+
 (**[point_val] is the point value of the letter entered:*)
 let point_val l =
-  if l = "A" then 1
-  else if l = "B" then 3
-  else if l = "C" then 3
-  else if l = "D" then 2
-  else if l = "E" then 1
-  else if l = "F" then 4
-  else if l = "G" then 2
-  else if l = "H" then 4
-  else if l = "I" then 1
-  else if l = "J" then 8
-  else if l = "K" then 5
-  else if l = "L" then 1
-  else if l = "M" then 3
-  else if l = "N" then 1
-  else if l = "O" then 1
-  else if l = "P" then 3
-  else if l = "Q" then 10
-  else if l = "R" then 1
-  else if l = "S" then 1
-  else if l = "T" then 1
-  else if l = "U" then 1
-  else if l = "V" then 4
-  else if l = "W" then 4
-  else if l = "X" then 8
-  else if l = "Y" then 4
-  else if l = "Z" then 10
+  if List.mem_assoc l (convert_assoc "data/points.csv") then
+    List.assoc l (convert_assoc "data/points.csv")
   else 0
 
 let rec loop_guess board (lst : (string * color * color) list)

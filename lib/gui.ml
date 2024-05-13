@@ -5,37 +5,7 @@ open Scrabbl
 let () = Random.self_init ()
 let info_section_size = 120
 let grid_size = 601
-
-let alphabet =
-  [
-    "a";
-    "b";
-    "c";
-    "d";
-    "e";
-    "f";
-    "g";
-    "h";
-    "i";
-    "j";
-    "k";
-    "l";
-    "m";
-    "n";
-    "o";
-    "p";
-    "q";
-    "r";
-    "s";
-    "t";
-    "u";
-    "v";
-    "w";
-    "x";
-    "y";
-    "z";
-  ]
-
+let alphabet = Array.to_list (Arg.read_arg "data/alphabet.txt")
 let board = init
 
 (** ex: [generate_coord 15 (600/15)] =

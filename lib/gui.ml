@@ -26,17 +26,25 @@ let rec print_tiles_list lst x y cell_size gap_size =
       draw_rect x y cell_size cell_size;
 
       let a, b = text_size h in
-      moveto
-        (x + (cell_size / 2) - (a / 2) + 1)
-        (y + ((cell_size / 2) - (b / 2)) + 2);
+      let x1 = x + (cell_size / 2) - (a / 2) + 1 in
+      let y1 = y + ((cell_size / 2) - (b / 2)) + 2 in
+      moveto x1 y1;
       set_text_size 60;
       draw_string h;
 
+      let points =
+        if point_val h = 0 then "" else string_of_int (point_val h)
+      in
+      let hor_move = a + 1 in
+      let vert_move = b - 3 in
+      moveto (x1 + hor_move) (y1 - vert_move);
+      set_color (Graphics.rgb 151 151 151);
+      draw_string points;
       print_tiles_list t (x + cell_size + gap_size) y cell_size gap_size
 
 (** prints the information about the current state of the game in the info
     section. *)
-let print_info p1_points p2_points player1 curr_tiles =
+let print_info p1_points p2_points player1 curr_tiles tiles_bag =
   set_color white;
   let gap = 10 in
   let ts = 10 in
@@ -47,7 +55,8 @@ let print_info p1_points p2_points player1 curr_tiles =
   set_text_size 80;
   draw_string
     ("Points:           Player 1: " ^ string_of_int p1_points ^ "    Player 2: "
-   ^ string_of_int p2_points);
+   ^ string_of_int p2_points ^ "         Tiles left in bag: "
+    ^ string_of_int (List.length tiles_bag));
 
   let y = ref (info_section_size - ((2 * gap) + ts)) in
   set_color gray;
@@ -199,31 +208,8 @@ let rec reset_turn (changes : (string * int * int) list ref) =
       changes := t;
       reset_turn changes
 
-let check_word (changes : (string * int * int) list ref) =
-  let wordpos =
-    List.sort_uniq
-      (fun (_, x1, y1) (_, x2, y2) ->
-        if x1 > x2 then 1
-        else if x1 < x2 then -1
-        else if y1 > y2 then 1
-        else if y1 < y2 then -1
-        else 0)
-      !changes
-  in
-  match wordpos with
-  | [] -> false
-  | (_, xh, yh) :: _ ->
-      if List.filter (fun (_, x, _) -> x = xh) wordpos = wordpos then
-        (* all in one column *)
-        (* NOTE TO SELF: be careful if they skip a cell!!!! *)
-        failwith "TODO"
-      else if List.filter (fun (_, _, y) -> y = yh) wordpos = wordpos then
-        (* all in one row *)
-        failwith "TODO"
-      else false
-
 (**[was_empty] is false if the cell at a, b was originally a letter *)
-let rec was_empty a b = played_at board a b = false
+let was_empty a b = played_at board a b = false
 
 (**[play_tiles] marks all tiles at values in backpointers to played. *)
 let rec play_tiles backpointers_l =
@@ -242,15 +228,6 @@ let rec remove_tile lst letter =
   | [] -> []
   | h :: t -> if h = letter then t else h :: remove_tile t letter
 
-(** todo - temp*)
-let print_lst l =
-  let rec iter_lst s ls =
-    match ls with
-    | [] -> s
-    | h :: t -> iter_lst (s ^ h) t
-  in
-  print_endline (iter_lst "" l)
-
 (**[draw_tiles] draws tiles from tile_bag until tile_lst has 7 letters. *)
 let draw_tiles tile_lst tile_bag =
   if List.length tile_bag = 0 then (tile_lst, tile_bag)
@@ -265,15 +242,24 @@ let draw_tiles tile_lst tile_bag =
     done;
     (!new_tile_lst, !new_tile_bag)
 
+(** [final_Extra_points] calculates the extra points added when player ends with
+    tiles_lst tiles *)
+let rec final_extra_points tiles_lst p =
+  match tiles_lst with
+  | [] -> p
+  | h :: t ->
+      let points = point_val h in
+      final_extra_points t (p + points)
+
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
 let rec loop (selected : (int * int) ref)
     (backpointers : (string * int * int) list ref) p1_points p2_points p1_tiles
-    p2_tiles tiles_bag player1 tiles_backpointer : unit =
+    p2_tiles tiles_bag player1 tiles_backpointer game_over : unit =
   draw_grid;
   print_board board;
   let tile_list = if !player1 then !p1_tiles else !p2_tiles in
-  print_info !p1_points !p2_points !player1 tile_list;
+  print_info !p1_points !p2_points !player1 tile_list !tiles_bag;
   paint_outline !selected;
 
   let e = wait_next_event [ Button_down; Key_pressed ] in
@@ -297,10 +283,10 @@ let rec loop (selected : (int * int) ref)
             else
               p2_tiles := remove_tile !p2_tiles (String.uppercase_ascii letter)))
     else if letter = "/" then (
-      (* They entered their gues, check if it is valid. If it is, play it,
+      (* They entered their guess, check if it is valid. If it is, play it,
          otherwise reset.*)
       let points = eval_guess board !backpointers in
-      if points >= 0 then
+      if points >= 0 then (
         let _ = play_tiles !backpointers in
         if !player1 then (
           player1 := false;
@@ -315,7 +301,34 @@ let rec loop (selected : (int * int) ref)
           tiles_backpointer := !p1_tiles;
           let tl, tb = draw_tiles !p2_tiles !tiles_bag in
           p2_tiles := tl;
-          tiles_bag := tb)
+          tiles_bag := tb);
+        if
+          List.length !tiles_bag = 0
+          && (List.length !p2_tiles = 0 || List.length !p1_tiles = 0)
+        then (
+          game_over := true;
+
+          if List.length !p1_tiles = 0 then (
+            p1_points := !p1_points + final_extra_points !p2_tiles 0;
+            p2_points := !p1_points - final_extra_points !p2_tiles 0)
+          else (
+            p2_points := !p2_points + final_extra_points !p1_tiles 0;
+            p1_points := !p1_points - final_extra_points !p1_tiles 0);
+
+          let s =
+            if !p1_points > !p2_points then
+              "Player 1 wins!\n\nPlayer 1 points: " ^ string_of_int !p1_points
+              ^ "\nPlayer 2 points: " ^ string_of_int !p2_points
+            else if !p2_points > !p1_points then
+              "Player 2 wins!\n\nPlayer 2 points: " ^ string_of_int !p2_points
+              ^ "\nPlayer 1 points: " ^ string_of_int !p1_points
+            else
+              "Tie!\n\nPlayer 1 points: " ^ string_of_int !p1_points
+              ^ "\nPlayer 2 points: " ^ string_of_int !p2_points
+          in
+          Unix.sleepf 2.0;
+          print_endline "GAME OVER!";
+          print_endline s))
       else (
         reset_turn backpointers;
         if !player1 then p1_tiles := !tiles_backpointer
@@ -332,8 +345,9 @@ let rec loop (selected : (int * int) ref)
     let cell = find_squ xpos ypos in
     if find_squ xpos ypos <> !selected then selected := cell;
     print_board board;
-    print_info !p1_points !p2_points !player1 [];
+    print_info !p1_points !p2_points !player1 [] !tiles_bag;
     paint_outline !selected);
 
-  loop selected backpointers p1_points p2_points p1_tiles p2_tiles tiles_bag
-    player1 tiles_backpointer
+  if !game_over = false then
+    loop selected backpointers p1_points p2_points p1_tiles p2_tiles tiles_bag
+      player1 tiles_backpointer game_over

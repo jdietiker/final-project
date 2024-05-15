@@ -46,7 +46,6 @@ let empty : t =
 let init : t =
   Array.init 15 (fun x -> Array.init 15 (fun y -> new_elt board.(x).(y)))
 
-(* not mutable for now *)
 let multiplier_at (board : t) i j =
   match board.(i).(j) with
   | m, _, _, _ -> m

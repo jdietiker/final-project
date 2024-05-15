@@ -1,1 +1,10 @@
-will eventually fill this with (a smaller list of) letters for testing
+A 
+B 
+C
+D
+E
+F
+G
+H
+I
+J

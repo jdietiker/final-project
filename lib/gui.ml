@@ -41,7 +41,7 @@ let rec print_tiles_list lst x y cell_size gap_size =
       let x1 = x + (cell_size / 2) - (a / 2) + 1 in
       let y1 = y + ((cell_size / 2) - (b / 2)) + 2 in
       moveto x1 y1;
-      set_text_size 60;
+      set_text_size 69;
       draw_string h;
 
       let points =
@@ -90,15 +90,6 @@ let print_info p1_points p2_points player1 curr_tiles tiles_bag =
   moveto gap (!y - (2 * gap));
   set_color black;
   draw_string "Current tiles: "
-
-let rec draw_grid_h_aux = function
-  | [] -> ()
-  | h :: t ->
-      let a, b = Graphics.current_point () in
-      Graphics.moveto 0 (h + info_section_size);
-      Graphics.lineto grid_size (h + info_section_size);
-      draw_grid_h_aux t;
-      Graphics.moveto a b
 
 (* paints the x for the menu bar *)
 let paint_x _ =
@@ -170,6 +161,15 @@ let print_menu_bar active =
   if active then (
     paint_x None;
     paint_instructions None)
+
+let rec draw_grid_h_aux = function
+  | [] -> ()
+  | h :: t ->
+      let a, b = Graphics.current_point () in
+      Graphics.moveto 0 (h + info_section_size);
+      Graphics.lineto grid_size (h + info_section_size);
+      draw_grid_h_aux t;
+      Graphics.moveto a b
 
 let rec draw_grid_v_aux = function
   | [] -> ()
@@ -334,20 +334,22 @@ let rec final_extra_points tiles_lst p =
       let points = point_val h in
       final_extra_points t (p + points)
 
-let init_tile_bag = Array.to_list (Arg.read_arg "data/bag.txt")
-let p1_tiles_i, bag1 = draw_tiles [] init_tile_bag
-let p2_tiles_i, tiles_bag_i = draw_tiles [] bag1
 let p1_points = ref 0
 let p2_points = ref 0
-let p1_tiles : string list ref = ref p1_tiles_i
-let p2_tiles : string list ref = ref p2_tiles_i
-let tiles_bag : string list ref = ref tiles_bag_i
+let p1_tiles : string list ref = ref []
+let p2_tiles : string list ref = ref []
+let tiles_bag : string list ref = ref []
 let selected : (int * int) ref = ref (-1, -1)
 let backpointers : (string * int * int) list ref = ref []
 let player1 = ref true
 let tiles_backpointer : string list ref = ref []
 let game_over = ref false
 let menu_open = ref false
+
+let init_vars p1_tiles_init p2_tiles_init tiles_bag_init =
+  p1_tiles := p1_tiles_init;
+  p2_tiles := p2_tiles_init;
+  tiles_bag := tiles_bag_init
 
 let enter_cell letter = function
   | -1, -1 -> ()
@@ -464,7 +466,7 @@ let rec loop () : unit =
       print_menu_bar !menu_open)
     else
       let cell = find_squ xpos ypos in
-      if find_squ xpos ypos <> !selected then selected := cell;
+      if cell <> !selected then selected := cell;
       print_board board;
       print_info !p1_points !p2_points !player1 [] !tiles_bag;
       paint_outline !selected);

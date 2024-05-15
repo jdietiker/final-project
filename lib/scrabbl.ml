@@ -297,8 +297,8 @@ let rec get_guess_lst spaces acc board =
           if List.mem tup acc then get_guess_lst t acc board
           else get_guess_lst t (acc @ [ tup ]) board)
 
-(** [eval_guess] returns the point value of the user's guess - <0 if it is not a
-    valid guess*)
+(** [eval_guess] returns the point value of the user's guess - <-1 if it is not
+    a valid guess*)
 let eval_guess (board : Gameboard.t)
     (spaces_lst : (string * color * color) list) =
   let guess_lst = get_guess_lst spaces_lst [] board in

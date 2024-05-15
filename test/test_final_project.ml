@@ -72,6 +72,10 @@ let gameboard_tests =
          ("test blank" >:: fun _ -> assert_equal (was_blank_at board 5 2) false);
          ( "test blank 2" >:: fun _ ->
            assert_equal (was_blank_at board 4 10) false );
+         ("test blank 3"
+         >::
+         let _ = set_was_blank 9 9 board true in
+         fun _ -> assert_equal (was_blank_at board 9 9) true);
          ("test played" >:: fun _ -> assert_equal (played_at board 2 14) false);
          ("test played 2" >:: fun _ -> assert_equal (played_at board 7 7) false);
          ("test played 3" >:: fun _ -> assert_equal (played_at board 10 10) true);
@@ -80,12 +84,14 @@ let gameboard_tests =
          ("test letter_at 3" >:: fun _ -> assert_equal (letter_at board 2 2) "B");
          ( "test letter_at 4" >:: fun _ ->
            assert_equal (letter_at board 10 10) "C" );
-         ( "test letter_at 5" >:: fun _ ->
-           assert_equal (letter_at board 2 3) (letter_at board 5 3) );
+         ("test letter_at 5" >:: fun _ -> assert_equal (letter_at board 5 3) "A");
+         ("test letter_at 6" >:: fun _ -> assert_equal (letter_at board 2 3) "A");
+         ( "test letter_at 6" >:: fun _ ->
+           assert_equal (letter_at board 2 3 == letter_at board 5 3) true );
        ]
 
-let scrabbl_tests =
-  "tests for is_empty"
+let score_tests =
+  "tests for dictionary and letters"
   >::: [
          ( "test dictionary membership 1" >:: fun _ ->
            assert_equal true (Scrabbl.valid_word "hello") );
@@ -95,8 +101,53 @@ let scrabbl_tests =
            assert_equal false (Scrabbl.valid_word "uncr") );
          ( "test dictionary membership 4" >:: fun _ ->
            assert_equal false (Scrabbl.valid_word "zbungmboc") );
+         ( "verify score for invalid letters" >:: fun _ ->
+           assert_equal 0 (Scrabbl.point_val "a") );
+         ( "verify score for invalid letters 2" >:: fun _ ->
+           assert_equal 0 (Scrabbl.point_val "]") );
+         ( "verify score for invalid letters 3" >:: fun _ ->
+           assert_equal 0 (Scrabbl.point_val "ahsdf") );
+         ( "verify score for invalid letters 4" >:: fun _ ->
+           assert_equal 0 (Scrabbl.point_val "5") );
+         ( "verify score for valid letters" >:: fun _ ->
+           assert_equal 1 (Scrabbl.point_val "A") );
+         ( "verify score for valid letters 2" >:: fun _ ->
+           assert_equal 10 (Scrabbl.point_val "Z") );
+         ( "verify score for valid letters 3" >:: fun _ ->
+           assert_equal 8 (Scrabbl.point_val "X") );
+         ( "verify score for valid letters 4" >:: fun _ ->
+           assert_equal 3 (Scrabbl.point_val "M") );
+       ]
+
+let board = init
+
+let guess_lst =
+  [ ("H", 7, 3); ("E", 7, 4); ("L", 7, 5); ("L", 7, 6); ("O", 7, 7) ]
+
+let rec set_lst gb = function
+  | [] -> ()
+  | (letter, x, y) :: t ->
+      let _ = set_letter x y gb letter in
+      set_lst gb t
+
+let _ = set_lst board guess_lst
+(* let _ = play_letter 2 3 board let _ = play_letter 2 2 board let _ =
+   play_letter 10 10 board let _ = play_letter 5 3 board *)
+
+let eval_tests =
+  "tests for evaluation of points"
+  >::: [
+         ("test letter_at" >:: fun _ -> assert_equal (letter_at board 7 6) "L");
+         ("test letter_at 2" >:: fun _ -> assert_equal (letter_at board 7 7) "O");
+         ( "test eval HELLO" >:: fun _ ->
+           let _ =
+             print_endline (string_of_int (Scrabbl.eval_guess board guess_lst))
+           in
+           assert_equal (Scrabbl.eval_guess board guess_lst) 12 );
        ]
 
 let _ = run_test_tt_main bag_tests
 let _ = run_test_tt_main gameboard_tests
-let _ = run_test_tt_main scrabbl_tests
+let _ = run_test_tt_main score_tests
+(* let _ = run_test_tt_main eval_tests *)
+(* not working yet ^ *)

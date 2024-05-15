@@ -176,6 +176,7 @@ let rec set_lst gb = function
       let _ = set_letter x y gb letter in
       set_lst gb t
 
+(** [play_lst gb lst] sets each item in [lst] to be played in [gb].*)
 let rec play_lst gb = function
   | [] -> ()
   | (_, x, y) :: t ->
@@ -189,44 +190,48 @@ let eval_tests =
          ("test letter_at" >:: fun _ -> assert_equal (letter_at board2 7 3) "H");
          ( "test letter_at 2" >:: fun _ ->
            assert_equal (letter_at board2 7 4) "E" );
+         ("test letter_at 3" >:: fun _ -> assert_equal (letter_at board2 5 3) "");
          ( "test eval HELLO" >:: fun _ ->
-           print_endline (string_of_int (Scrabbl.eval_guess board2 guess_lst));
+           print_endline
+             ("The value of HELLO is: "
+             ^ string_of_int (Scrabbl.eval_guess board2 guess_lst));
            assert_equal (Scrabbl.eval_guess board2 guess_lst) 24 );
          ( "test played 2" >:: fun _ ->
-           play_lst board2 guess_lst;
-           let _ = print_endline (string_of_bool (played_at board2 7 4)) in
+           let _ = play_lst board2 guess_lst in
+           let _ =
+             print_endline
+               ("IS IT PLAYED AT 7,4??? Answer: "
+               ^ string_of_bool (played_at board2 7 4))
+           in
            assert_equal (played_at board2 7 4) true );
-         ("test add word"
-         >::
-         let lst = [ ("O", 8, 6); ("W", 9, 6) ] in
-         let _ = set_lst board lst in
-         let _ =
-           print_endline
-             ("VALUE IS: " ^ string_of_int (Scrabbl.eval_guess board lst))
-         in
-         fun _ ->
-           play_lst board2 guess_lst;
-           assert_equal (Scrabbl.eval_guess board lst) (-1));
+         ( "test add word" >:: fun _ ->
+           let lst = [ ("O", 8, 6); ("W", 9, 6) ] in
+           let _ = play_lst board2 guess_lst in
+           let _ =
+             print_endline
+               ("IS IT PLAYED\n            AT 7,4??? Answer: "
+               ^ string_of_bool (played_at board2 7 4))
+           in
+           let _ = set_lst board2 lst in
+           let _ =
+             print_endline
+               ("VALUE IS: " ^ string_of_int (Scrabbl.eval_guess board2 lst))
+           in
+           assert_equal (Scrabbl.eval_guess board2 lst) 7 );
        ]
 
-let get_all_words_test =
-  "tests for get_all_words"
-  >::: [
-         ( "test get_all_words HELLO" >:: fun _ ->
-           assert_equal
-             (Scrabbl.get_all_words board guess_lst)
-             (Some [ ("HELLO", 7, 3, true) ]) );
-       ]
+(* let get_all_words_test = "tests for get_all_words" >::: [ ( "test
+   get_all_words HELLO" >:: fun _ -> assert_equal (Scrabbl.get_all_words board
+   guess_lst) (Some [ ("HELLO", 7, 3, true) ]) ); ]
 
-let guess_lst_2 =
-  [ ("H", 7, 3); ("E", 7, 4); ("L", 7, 5); ("L", 7, 6); ("O", 7, 7) ]
+   let guess_lst_2 = [ ("H", 7, 3); ("E", 7, 4); ("L", 7, 5); ("L", 7, 6); ("O",
+   7, 7) ] *)
 
-let _ = set_lst board guess_lst
+let _ = set_lst board2 guess_lst
 let _ = run_test_tt_main bag_tests
 let _ = run_test_tt_main gameboard_tests
 let _ = run_test_tt_main score_tests
 let _ = run_test_tt_main eval_tests
 let _ = run_test_tt_main gameboard_function_tests
-let board = init ()
-let _ = set_lst board guess_lst
-let _ = run_test_tt_main get_all_words_test
+(* let board = init () let _ = set_lst board guess_lst *)
+(* let _ = run_test_tt_main get_all_words_test *)

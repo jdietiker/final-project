@@ -157,8 +157,8 @@ let rec check_opp board guess_lst current_vert word_lst =
           in
           check_opp board t current_vert new_lst)
 
-(** [get_all_words] returns the list of the user's guess - <0 if it is not a
-    valid guess*)
+(** [get_all_words] returns the point value of the user's guess - <0 if it is
+    not a valid guess*)
 let get_all_words (board : Gameboard.t)
     (guess_lst : (string * color * color) list) =
   let words_lst = ref [] in
@@ -297,11 +297,11 @@ let rec get_guess_lst spaces acc board =
           if List.mem tup acc then get_guess_lst t acc board
           else get_guess_lst t (acc @ [ tup ]) board)
 
-let rec pr_array = function
+let rec print_array = function
   | [] -> ()
   | (str, _, _, _) :: t ->
       print_string (str ^ ",");
-      pr_array t
+      print_array t
 
 (** [eval_guess] returns the point value of the user's guess - <-1 if it is not
     a valid guess*)
@@ -311,7 +311,8 @@ let eval_guess (board : Gameboard.t)
   match get_all_words board guess_lst with
   | None -> -1
   | Some words_lst ->
-      let _ = pr_array words_lst in
+      let _ = print_string "Words List So Far: " in
+      let _ = print_array words_lst in
       if List.length words_lst = 0 then -1
       else if
         (* check if it was a valid connecting move, if so calculate points *)

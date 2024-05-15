@@ -42,7 +42,7 @@ let rec print_tiles_list lst x y cell_size gap_size =
       let y1 = y + ((cell_size / 2) - (b / 2)) + 2 in
       moveto x1 y1;
       set_text_size 69;
-      draw_string h;
+      if h <> "-" then draw_string h;
 
       let points =
         if point_val h = 0 then "" else string_of_int (point_val h)
@@ -113,7 +113,7 @@ let paint_switch_turns player1 =
   draw_string s2
 
 (* paints the x for the menu bar *)
-let paint_x _ =
+let paint_x () =
   let x_color = Graphics.rgb 198 109 109 in
   Graphics.set_color x_color;
   Graphics.fill_rect
@@ -139,7 +139,7 @@ let paint_x _ =
   Graphics.lineto (grid_size - gap) (grid_size + info_section_size + gap)
 
 (* paint the help instructions: *)
-let paint_instructions _ =
+let paint_instructions () =
   let menu_length = grid_size + info_section_size in
   Graphics.set_color white;
   Graphics.fill_rect 0
@@ -160,7 +160,7 @@ let paint_instructions _ =
   done
 
 (* reset the background behind the menu to black *)
-let paint_close_menu _ =
+let paint_close_menu () =
   Graphics.set_color black;
   Graphics.fill_rect 0 (info_section_size - 1) grid_size (grid_size + 1)
 
@@ -180,8 +180,8 @@ let print_menu_bar active =
   Graphics.set_color black;
   Graphics.draw_string "Help";
   if active then (
-    paint_x None;
-    paint_instructions None)
+    paint_x ();
+    paint_instructions ())
 
 let rec draw_grid_h_aux = function
   | [] -> ()
@@ -217,15 +217,19 @@ let print_cell i j s =
   let a, b = text_size s in
   let vert_move = a + 1 in
   let hor_move = b - 3 in
-  let points = if point_val s = 0 then "" else string_of_int (point_val s) in
+  let points =
+    if point_val s = 0 then ""
+    else if was_blank_at board i j then ""
+    else string_of_int (point_val s)
+  in
   moveto
     ((grid_size / 15 * i) + (grid_size / 30) - (a / 2) + 1)
     (grid_size
     - ((grid_size / 15 * j) + (grid_size / 30) + (b / 2) + 2)
     + info_section_size);
-  set_color black;
+  if was_blank_at board i j then set_color blue else set_color black;
   set_text_size 60;
-  draw_string s;
+  if s <> "-" then draw_string s;
 
   moveto
     ((grid_size / 15 * i) + (grid_size / 30) - (a / 2) + 1 + vert_move)
@@ -309,6 +313,7 @@ let rec reset_turn (changes : (string * int * int) list ref) =
   | [] -> ()
   | (ch, x, y) :: t ->
       set_letter x y board ch;
+      set_was_blank x y board false;
       changes := t;
       reset_turn changes
 
@@ -381,14 +386,17 @@ let enter_cell letter = function
       if was_empty a b && List.mem (String.uppercase_ascii letter) curr_lst then (
         (* only changing the cell if there is not already a tile played
            there. *)
-        if letter_at board a b <> "" then
+        if letter_at board a b <> "" then (
+          let tile_to_return =
+            if was_blank_at board a b then "-" else letter_at board a b
+          in
+          if was_blank_at board a b then set_was_blank a b board false;
           if
             (* user already guessed here, return that tile to their tiles *)
             !player1
-          then p1_tiles := !p1_tiles @ [ letter_at board a b ]
-          else p2_tiles := !p2_tiles @ [ letter_at board a b ];
-
-        backpointers := (letter_at board a b, a, b) :: !backpointers;
+          then p1_tiles := !p1_tiles @ [ tile_to_return ]
+          else p2_tiles := !p2_tiles @ [ tile_to_return ])
+        else backpointers := (letter_at board a b, a, b) :: !backpointers;
         set_letter a b board (String.uppercase_ascii letter);
         if !player1 then
           p1_tiles := remove_tile !p1_tiles (String.uppercase_ascii letter)
@@ -446,17 +454,57 @@ let try_guess () =
       && (List.length !p2_tiles = 0 || List.length !p1_tiles = 0)
     then end_game ())
   else (
-    print_endline
-      ("tring to reset: length of backpointers: "
-      ^ string_of_int (List.length !backpointers));
-    print_endline
-      ("tring to reset: length of tiles backpointers: "
-      ^ string_of_int (List.length !tiles_backpointer));
     reset_turn backpointers;
     if !player1 then p1_tiles := !tiles_backpointer
     else p2_tiles := !tiles_backpointer);
 
   backpointers := []
+
+let try_blank () =
+  let r = fst !selected in
+  let c = snd !selected in
+
+  if was_empty r c then (
+    let old_letter = letter_at board r c in
+
+    let has_blank = ref false in
+    if !player1 then has_blank := List.mem "-" !p1_tiles
+    else has_blank := List.mem "-" !p2_tiles;
+
+    if !has_blank then (
+      (if letter_at board r c <> "" then
+         let tile_to_return =
+           if was_blank_at board r c then "-" else letter_at board r c
+         in
+         if
+           (* user already guessed here, return that tile to their tiles *)
+           !player1
+         then p1_tiles := !p1_tiles @ [ tile_to_return ]
+         else p2_tiles := !p2_tiles @ [ tile_to_return ]);
+      set_letter r c board "-";
+      set_was_blank r c board true;
+      print_board board;
+      if !player1 then p1_tiles := remove_tile !p1_tiles "-"
+      else p2_tiles := remove_tile !p2_tiles "-";
+      let curr_tiles = if !player1 then !p1_tiles else !p2_tiles in
+      print_info !p1_points !p2_points !player1 curr_tiles !tiles_bag;
+
+      let letter_entered = ref false in
+      let letter_ref = ref "-" in
+      while !letter_entered = false do
+        let e = wait_next_event [ Key_pressed ] in
+        if e.keypressed then
+          let letter = String.make 1 e.key in
+          if List.mem letter alphabet then (
+            letter_entered := true;
+            letter_ref := letter)
+      done;
+
+      backpointers := (old_letter, r, c) :: !backpointers;
+      set_letter r c board (String.uppercase_ascii !letter_ref);
+      print_board board))
+
+(* TODO - do something with letter_ref *)
 
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
@@ -466,8 +514,8 @@ let rec loop () : unit =
   let tile_list = if !player1 then !p1_tiles else !p2_tiles in
   if !between_turns = false then
     print_info !p1_points !p2_points !player1 tile_list !tiles_bag;
-  print_menu_bar !menu_open;
   paint_outline !selected;
+  print_menu_bar !menu_open;
 
   let e = wait_next_event [ Button_down; Key_pressed ] in
 
@@ -477,7 +525,7 @@ let rec loop () : unit =
     if
       xpos >= grid_size - menu_bar_size && ypos >= grid_size + info_section_size
     then (
-      paint_close_menu None;
+      paint_close_menu ();
       menu_open := false))
   else if !between_turns then (
     between_turns := false;
@@ -486,6 +534,7 @@ let rec loop () : unit =
     let letter = String.make 1 e.key in
     (* They entered a letter, so we put it on the board. *)
     if List.mem letter alphabet then enter_cell letter !selected
+    else if letter = "-" then try_blank ()
     else if letter = "/" then
       (* They entered their guess, check if it is valid. If it is, play it,
          otherwise reset.*)

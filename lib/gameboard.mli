@@ -34,6 +34,10 @@ val played_at : t -> int -> int -> bool
 (**[played_at board i j] is the boolean of whether the letter at i, j has been
    played.*)
 
+val was_blank_at : t -> int -> int -> bool
+(**[was_blank_at board i j] is the boolean of whether the letter at i, j was
+   blank.*)
+
 val el_multiplier : elt -> multiplier
 (** [el_multiplier el] is the multiplier stored in element [el] *)
 
@@ -53,6 +57,10 @@ val length : t -> int
 val set_letter : int -> int -> t -> string -> unit
 (** [set_letter r c board s] sets the letter at row [r] and col [c] of [board]
     to [s] *)
+
+val set_was_blank : int -> int -> t -> bool -> unit
+(**[set_was_blank r c boardb ] sets the letter at row [r] and col [c] of [board]
+   to be [b] *)
 
 val play_letter : int -> int -> t -> unit
 (** [play_letter r c board] sets the letter at row [r] and col [c] of [board] to

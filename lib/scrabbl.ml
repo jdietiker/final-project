@@ -212,7 +212,9 @@ let get_points word sc sr vert board =
     let this_row = if vert then sr + i else sr in
     let this_col = if vert then sc else sc + i in
     let this_letter = letter_at board this_col this_row in
-    let this_base_points = point_val this_letter in
+    let this_base_points =
+      if was_blank_at board this_col this_row then 0 else point_val this_letter
+    in
 
     if played_at board this_col this_row then
       points := !points + this_base_points
@@ -283,10 +285,22 @@ let check_connecting_aux lst board =
   if is_empty board then check_over_star lst false board
   else check_connecting lst false board
 
+(**[get_guess_lst] returns the list of letters at the positions in spaces_lst *)
+let rec get_guess_lst spaces acc board =
+  match spaces with
+  | [] -> acc
+  | h :: t -> (
+      match h with
+      | _, r, c ->
+          let tup = (letter_at board r c, r, c) in
+          if List.mem tup acc then get_guess_lst t acc board
+          else get_guess_lst t (acc @ [ tup ]) board)
+
 (** [eval_guess] returns the point value of the user's guess - <0 if it is not a
     valid guess*)
-let eval_guess (board : Gameboard.t) (guess_lst : (string * color * color) list)
-    =
+let eval_guess (board : Gameboard.t)
+    (spaces_lst : (string * color * color) list) =
+  let guess_lst = get_guess_lst spaces_lst [] board in
   match get_all_words board guess_lst with
   | None -> -1
   | Some words_lst ->

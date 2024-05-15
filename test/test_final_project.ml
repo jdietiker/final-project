@@ -55,8 +55,17 @@ let _ = play_letter 9 10 board
 let _ = play_letter 5 3 board
 
 let gameboard_tests =
-  "tests for empty gameboard"
+  "tests for setting and playing letters on gameboard"
   >::: [
+         ("test new board is empty"
+         >::
+         let new_board = init () in
+         fun _ -> assert_equal (is_empty new_board) true);
+         ("test setting letter keeps empty board empty"
+         >::
+         let new_board = init () in
+         let _ = set_letter 3 2 new_board "D" in
+         fun _ -> assert_equal (is_empty new_board) true);
          ( "test multipliers" >:: fun _ ->
            assert_equal (multiplier_at board 0 0) TW );
          ( "test multipliers 2" >:: fun _ ->
@@ -88,6 +97,22 @@ let gameboard_tests =
          ("test letter_at 6" >:: fun _ -> assert_equal (letter_at board 2 3) "A");
          ( "test letter_at 6" >:: fun _ ->
            assert_equal (letter_at board 2 3 == letter_at board 5 3) true );
+         ("test setting letter doesn't play it"
+         >::
+         let _ = set_letter 4 4 board "D" in
+         fun _ -> assert_equal (played_at board 4 4) false);
+         ("test setting overriding letters plays correct letter"
+         >::
+         let _ = set_letter 5 4 board "D" in
+         let _ = set_letter 5 4 board "E" in
+         let _ = play_letter 5 4 board in
+         fun _ -> assert_equal (letter_at board 5 4) "E");
+         ("test cannot override already played letter"
+         >::
+         let _ = set_letter 6 4 board "D" in
+         let _ = play_letter 6 4 board in
+         let _ = set_letter 6 4 board "E" in
+         fun _ -> assert_equal (played_at board 6 4) true);
        ]
 
 let score_tests =
@@ -119,6 +144,27 @@ let score_tests =
            assert_equal 3 (Scrabbl.point_val "M") );
        ]
 
+let gameboard_function_tests =
+  "tests gameboard functions: "
+  >::: [
+         ( "test played_at 7 3" >:: fun _ ->
+           assert_equal (played_at board 7 3) false );
+         ( "test played_at 7 4" >:: fun _ ->
+           assert_equal (played_at board 7 4) false );
+         ( "test multiplier_at 7 7" >:: fun _ ->
+           assert_equal (multiplier_at board 7 7) Star );
+         ( "test multiplier_at 7 3" >:: fun _ ->
+           assert_equal (multiplier_at board 7 3) DL );
+         ( "test multiplier_at 7 0" >:: fun _ ->
+           assert_equal (multiplier_at board 7 0) TW );
+         ( "test multiplier_at 7 1" >:: fun _ ->
+           assert_equal (multiplier_at board 7 1) No );
+         ( "test was blank at 7 7" >:: fun _ ->
+           assert_equal (was_blank_at board 7 7) false );
+         ( "test was blank at 7 3" >:: fun _ ->
+           assert_equal (was_blank_at board 7 3) false );
+       ]
+
 let board2 = init ()
 
 let guess_lst =
@@ -132,14 +178,8 @@ let rec set_lst gb = function
 
 let rec play_lst gb = function
   | [] -> ()
-  | (_, c1, c2) :: t ->
-      let _ = play_letter c1 c2 gb in
-      print_endline
-        ("played letter at " ^ string_of_int c1 ^ "," ^ string_of_int c2);
-      let () = assert_equal (played_at gb c1 c2) true in
-      print_endline
-        ("letter at " ^ string_of_int c1 ^ "," ^ string_of_int c2 ^ " is played");
-      print_endline (string_of_bool (played_at board2 7 4));
+  | (_, x, y) :: t ->
+      let _ = play_letter x y gb in
       play_lst gb t
 
 let eval_tests =
@@ -169,8 +209,24 @@ let eval_tests =
            assert_equal (Scrabbl.eval_guess board lst) (-1));
        ]
 
-let _ = set_lst board2 guess_lst
+let get_all_words_test =
+  "tests for get_all_words"
+  >::: [
+         ( "test get_all_words HELLO" >:: fun _ ->
+           assert_equal
+             (Scrabbl.get_all_words board guess_lst)
+             (Some [ ("HELLO", 7, 3, true) ]) );
+       ]
+
+let guess_lst_2 =
+  [ ("H", 7, 3); ("E", 7, 4); ("L", 7, 5); ("L", 7, 6); ("O", 7, 7) ]
+
+let _ = set_lst board guess_lst
 let _ = run_test_tt_main bag_tests
 let _ = run_test_tt_main gameboard_tests
 let _ = run_test_tt_main score_tests
 let _ = run_test_tt_main eval_tests
+let _ = run_test_tt_main gameboard_function_tests
+let board = init ()
+let _ = set_lst board guess_lst
+let _ = run_test_tt_main get_all_words_test

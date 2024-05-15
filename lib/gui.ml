@@ -652,8 +652,9 @@ let rec swap_tiles tiles_lst indices_selected =
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
 let rec loop () : unit =
-  draw_grid;
-  print_board board;
+  if !menu_open = false then (
+    draw_grid;
+    print_board board);
   let tile_list = if !player1 then !p1_tiles else !p2_tiles in
   if !between_turns = false then
     print_info !p1_points !p2_points !player1 tile_list !tiles_bag;

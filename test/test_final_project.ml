@@ -1,5 +1,6 @@
 open OUnit2
 open Final_project
+open Final_project.Gui
 
 let scrabbl_tests =
   "tests for is_empty"
@@ -14,4 +15,8 @@ let scrabbl_tests =
            assert_equal false (Scrabbl.valid_word "zbungmboc") );
        ]
 
+let init_tile_bag = Array.to_list (Arg.read_arg "data/bag.txt")
+let p1_tiles_i, bag1 = draw_tiles [] init_tile_bag
+let p2_tiles_i, tiles_bag_i = draw_tiles [] bag1
+let () = init_vars p1_tiles_i p2_tiles_i tiles_bag_i
 let _ = run_test_tt_main scrabbl_tests

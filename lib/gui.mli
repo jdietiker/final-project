@@ -1,6 +1,7 @@
 val draw_grid : unit
 val print_board : Gameboard.t -> unit
 val draw_tiles : string list -> string list -> string list * string list
+val init_vars : string list -> string list -> string list -> unit
 
 val loop :
   (* (int * int) ref -> (string * int * int) list ref -> int ref -> int ref ->

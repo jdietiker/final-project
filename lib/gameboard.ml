@@ -1,5 +1,3 @@
-open Sys
-
 (* Check if a file exists (helper function for find_project_root)*)
 let file_exists path =
   try

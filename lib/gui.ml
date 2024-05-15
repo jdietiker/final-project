@@ -30,12 +30,31 @@ let rec generate_coord num int =
 
 let coordinates = generate_coord 15 (grid_size / 15)
 
-let rec print_tiles_list lst x y cell_size gap_size =
+let get_tile_index x y =
+  let tile_index = ref (-1) in
+  if y >= 10 && y <= 10 + (grid_size / 15) then (
+    let min_x = 116 in
+    let cell_size = 40 in
+    let gap_size = 10 in
+    for i = 0 to 6 do
+      let start_x = min_x + (i * gap_size) + (i * cell_size) in
+      if x >= start_x && x <= start_x + cell_size then tile_index := i
+    done;
+    !tile_index)
+  else !tile_index
+
+let rec print_tiles_list lst x y cell_size gap_size selected_indices =
   match lst with
   | [] -> 0
   | h :: t ->
       let c = Graphics.rgb 237 210 153 in
-      set_color c;
+      let my_yellow = Graphics.rgb 230 189 43 in
+      if
+        List.mem
+          (get_tile_index (x + (cell_size / 2)) (y + (cell_size / 2)))
+          selected_indices
+      then set_color my_yellow
+      else set_color c;
       fill_rect x y cell_size cell_size;
       set_color black;
       draw_rect x y cell_size cell_size;
@@ -55,7 +74,9 @@ let rec print_tiles_list lst x y cell_size gap_size =
       moveto (x1 + hor_move) (y1 - vert_move);
       set_color (Graphics.rgb 151 151 151);
       draw_string points;
-      print_tiles_list t (x + cell_size + gap_size) y cell_size gap_size
+      print_tiles_list t
+        (x + cell_size + gap_size)
+        y cell_size gap_size selected_indices
 
 (** prints the information about the current state of the game in the info
     section. *)
@@ -88,7 +109,7 @@ let print_info p1_points p2_points player1 curr_tiles tiles_bag =
   Graphics.lineto (grid_size - gap) !y;
 
   let cs = grid_size / 15 in
-  let _ = print_tiles_list curr_tiles 116 (!y - ts - cs) cs gap in
+  let _ = print_tiles_list curr_tiles 116 (!y - ts - cs) cs gap [] in
 
   moveto gap (!y - (2 * gap));
   set_color black;
@@ -167,9 +188,8 @@ let paint_close_menu () =
   Graphics.set_color black;
   Graphics.fill_rect 0 (info_section_size - 1) grid_size (grid_size + 1)
 
-(** draws the menu button at the top *)
-let print_menu_bar active =
-  let menu_color = Graphics.rgb 182 182 182 in
+(* paints the help button *)
+let paint_help menu_color gap =
   Graphics.set_color menu_color;
   Graphics.fill_rect 0
     (grid_size + info_section_size)
@@ -178,10 +198,50 @@ let print_menu_bar active =
   Graphics.draw_rect 0
     (grid_size + info_section_size)
     menu_button_width menu_bar_size;
-  let gap = 5 in
   Graphics.moveto gap (grid_size + info_section_size + gap);
   Graphics.set_color black;
-  Graphics.draw_string "Help";
+  Graphics.draw_string "Help"
+
+let paint_pass menu_color gap =
+  Graphics.set_color menu_color;
+  Graphics.fill_rect (menu_button_width + 2)
+    (grid_size + info_section_size)
+    menu_button_width menu_bar_size;
+  Graphics.set_color black;
+  Graphics.draw_rect (menu_button_width + 1)
+    (grid_size + info_section_size)
+    menu_button_width menu_bar_size;
+  Graphics.moveto
+    (menu_button_width + 1 + gap)
+    (grid_size + info_section_size + gap);
+  Graphics.set_color black;
+  Graphics.draw_string "Pass"
+
+let paint_swap menu_color gap =
+  Graphics.set_color menu_color;
+  Graphics.fill_rect
+    ((menu_button_width * 2) + 3)
+    (grid_size + info_section_size)
+    menu_button_width menu_bar_size;
+  Graphics.set_color black;
+  Graphics.draw_rect
+    ((menu_button_width * 2) + 2)
+    (grid_size + info_section_size)
+    menu_button_width menu_bar_size;
+  Graphics.moveto
+    ((menu_button_width * 2) + 2 + gap)
+    (grid_size + info_section_size + gap);
+  Graphics.set_color black;
+  Graphics.draw_string "Swap"
+
+(** draws the menu button at the top *)
+let print_menu_bar active =
+  let menu_color = Graphics.rgb 182 182 182 in
+  let gap = 5 in
+  paint_help menu_color gap;
+  paint_pass menu_color gap;
+  paint_swap menu_color gap;
+
   if active then (
     paint_x ();
     paint_instructions ())
@@ -507,7 +567,87 @@ let try_blank () =
       set_letter r c board (String.uppercase_ascii !letter_ref);
       print_board board))
 
-(* TODO - do something with letter_ref *)
+(** [remove_index] removes an elemennt with index from the list and returns the
+    new list. *)
+let remove_index element lst =
+  let rec aux acc = function
+    | [] -> acc
+    | x :: xs -> if x = element then aux acc xs else aux (x :: acc) xs
+  in
+  aux [] lst
+
+let paint_swap_tiles curr_tiles selected_indices =
+  set_color white;
+  let gap = 10 in
+  let ts = 10 in
+  fill_rect 0 0 (grid_size - (gap / 2)) (info_section_size - (gap / 2));
+  moveto gap (info_section_size - (2 * gap));
+  set_color black;
+  set_text_size 80;
+  draw_string "SWAP TILES";
+  let y = info_section_size - ((2 * gap) + ts) - ((2 * gap) + ts) in
+  let cs = grid_size / 15 in
+  let _ =
+    print_tiles_list curr_tiles 116 (y - ts - cs) cs gap selected_indices
+  in
+  moveto gap (info_section_size - (2 * gap) - 18);
+  set_color black;
+  draw_string
+    "Select Tiles to Swap. Press any key once you have finished selection to \
+     swap."
+
+let select_tiles tiles_l indices =
+  let lst = ref [] in
+  for i = 0 to List.length indices - 1 do
+    let index = List.nth indices i in
+    let tile = List.nth tiles_l index in
+    lst := List.append !lst [ tile ]
+  done;
+  !lst
+
+(* swap_letters aux actually removes the selected letters in [tiles] from the
+   current player's hand. *)
+let swap_letters_aux tiles =
+  (* first remove all of the selected tiles from the player's rack: *)
+  for i = 0 to List.length tiles - 1 do
+    let letter = List.nth tiles i in
+    if !player1 then p1_tiles := remove_tile !p1_tiles letter
+    else p2_tiles := remove_tile !p2_tiles letter
+  done;
+  (* then re-fill that player's rack: *)
+  let new_t_lst, new_t_bag =
+    if !player1 then draw_tiles !p1_tiles !tiles_bag
+    else draw_tiles !p2_tiles !tiles_bag
+  in
+  if !player1 then p1_tiles := new_t_lst else p2_tiles := new_t_lst;
+  tiles_bag := new_t_bag;
+  (* then add the removed tiles to the tiles bag: *)
+  for i = 0 to List.length tiles - 1 do
+    let letter = List.nth tiles i in
+    tiles_bag := List.append !tiles_bag [ letter ]
+  done
+
+(* swap tiles runs all of the other functions needed for a user to swap tiles *)
+let rec swap_tiles tiles_lst indices_selected =
+  paint_swap_tiles tiles_lst !indices_selected;
+  let e = wait_next_event [ Button_down; Key_pressed ] in
+
+  if e.keypressed then (
+    let selected_tiles = select_tiles tiles_lst !indices_selected in
+    if
+      List.length selected_tiles > 0
+      && List.length selected_tiles <= List.length !tiles_bag
+    then swap_letters_aux selected_tiles)
+  else if e.button then (
+    let xpos = e.mouse_x in
+    let ypos = e.mouse_y in
+    let ti = get_tile_index xpos ypos in
+    if ti >= 0 && ti <= List.length tiles_lst then
+      if List.mem ti !indices_selected then
+        indices_selected := remove_index ti !indices_selected
+      else indices_selected := List.append !indices_selected [ ti ];
+    paint_swap_tiles tiles_lst !indices_selected;
+    swap_tiles tiles_lst indices_selected)
 
 (** before_changes represents the changes required to get the board back to
     before the new letters are inputted. *)
@@ -551,8 +691,28 @@ let rec loop () : unit =
     let xpos = e.mouse_x in
     let ypos = e.mouse_y in
     if xpos <= menu_button_width && ypos >= grid_size then (
+      (* menu: *)
       menu_open := true;
       print_menu_bar !menu_open)
+    else if xpos <= (menu_button_width * 2) + 2 && ypos >= grid_size then (
+      (* pass: *)
+      reset_turn backpointers;
+      if !player1 then p1_tiles := !tiles_backpointer
+      else p2_tiles := !tiles_backpointer;
+      paint_switch_turns !player1;
+      if !player1 then player1 := false else player1 := true;
+      between_turns := true)
+    else if xpos <= (menu_button_width * 3) + 3 && ypos >= grid_size then (
+      (* swap:*)
+      reset_turn backpointers;
+      if !player1 then p1_tiles := !tiles_backpointer
+      else p2_tiles := !tiles_backpointer;
+      let curr_tiles = if !player1 then !p1_tiles else !p2_tiles in
+      print_info !p1_points !p2_points !player1 curr_tiles !tiles_bag;
+      swap_tiles curr_tiles (ref []);
+      paint_switch_turns !player1;
+      if !player1 then player1 := false else player1 := true;
+      between_turns := true)
     else
       let cell = find_squ xpos ypos in
       if cell <> !selected then selected := cell;

@@ -4,9 +4,21 @@ open Scrabbl
 
 let () = Random.self_init ()
 let info_section_size = 120
+let menu_bar_size = 20
+let menu_button_width = 42
 let grid_size = 601
 let alphabet = Array.to_list (Arg.read_arg "data/alphabet.txt")
 let board = init
+let help = Arg.read_arg "data/help.txt"
+
+module StringSet = Set.Make (struct
+  type t = string
+
+  let compare a b =
+    compare (String.lowercase_ascii a) (String.lowercase_ascii b)
+end)
+
+let help_lst = Array.to_list help
 
 (** ex: [generate_coord 15 (600/15)] =
     [[0;40;80;120;160;200;240;280;320;360;400;440;480;520;560;600]] *)
@@ -88,6 +100,77 @@ let rec draw_grid_h_aux = function
       draw_grid_h_aux t;
       Graphics.moveto a b
 
+(* paints the x for the menu bar *)
+let paint_x _ =
+  let x_color = Graphics.rgb 198 109 109 in
+  Graphics.set_color x_color;
+  Graphics.fill_rect
+    (grid_size - menu_bar_size)
+    (grid_size + info_section_size)
+    menu_bar_size menu_bar_size;
+  Graphics.set_color black;
+  Graphics.draw_rect
+    (grid_size - menu_bar_size)
+    (grid_size + info_section_size)
+    menu_bar_size menu_bar_size;
+  (* draw x: *)
+  let gap = 3 in
+  Graphics.moveto
+    (grid_size - menu_bar_size + gap)
+    (grid_size + info_section_size + gap);
+
+  Graphics.lineto (grid_size - gap)
+    (grid_size + info_section_size + menu_bar_size - gap);
+  Graphics.moveto
+    (grid_size - menu_bar_size + gap)
+    (grid_size + info_section_size + menu_bar_size - gap);
+  Graphics.lineto (grid_size - gap) (grid_size + info_section_size + gap)
+
+(* paint the help instructions: *)
+let paint_instructions _ =
+  let menu_length = grid_size + info_section_size in
+  Graphics.set_color white;
+  Graphics.fill_rect 0
+    (grid_size + (info_section_size - menu_length))
+    grid_size menu_length;
+  Graphics.set_color black;
+
+  let gap = 5 in
+  let line_gap = 2 in
+  let _, str_length = text_size "hi" in
+  let y = ref (grid_size + info_section_size - gap - str_length) in
+  let length = List.length help_lst in
+  for i = 0 to length - 1 do
+    let s = List.nth help_lst i in
+    Graphics.moveto gap !y;
+    Graphics.draw_string s;
+    y := !y - (line_gap + str_length)
+  done
+
+(* reset the background behind the menu to black *)
+let paint_close_menu _ =
+  Graphics.set_color black;
+  Graphics.fill_rect 0 (info_section_size - 1) grid_size (grid_size + 1)
+
+(** draws the menu button at the top *)
+let print_menu_bar active =
+  let menu_color = Graphics.rgb 182 182 182 in
+  Graphics.set_color menu_color;
+  Graphics.fill_rect 0
+    (grid_size + info_section_size)
+    menu_button_width menu_bar_size;
+  Graphics.set_color black;
+  Graphics.draw_rect 0
+    (grid_size + info_section_size)
+    menu_button_width menu_bar_size;
+  let gap = 5 in
+  Graphics.moveto gap (grid_size + info_section_size + gap);
+  Graphics.set_color black;
+  Graphics.draw_string "Help";
+  if active then (
+    paint_x None;
+    paint_instructions None)
+
 let rec draw_grid_v_aux = function
   | [] -> ()
   | h :: t ->
@@ -101,7 +184,7 @@ let draw_grid =
   (* the size of the section which prints information about the player states *)
   Graphics.open_graph
     (" " ^ string_of_int grid_size ^ "x"
-    ^ string_of_int (grid_size + info_section_size));
+    ^ string_of_int (grid_size + info_section_size + menu_bar_size));
   set_window_title "SCRABBLE!";
   set_color black;
   set_text_size 200;
@@ -264,6 +347,7 @@ let backpointers : (string * int * int) list ref = ref []
 let player1 = ref true
 let tiles_backpointer : string list ref = ref []
 let game_over = ref false
+let menu_open = ref false
 
 let enter_cell letter = function
   | -1, -1 -> ()
@@ -272,6 +356,13 @@ let enter_cell letter = function
       if was_empty a b && List.mem (String.uppercase_ascii letter) curr_lst then (
         (* only changing the cell if there is not already a tile played
            there. *)
+        if letter_at board a b <> "" then
+          if
+            (* user already guessed here, return that tile to their tiles *)
+            !player1
+          then p1_tiles := !p1_tiles @ [ letter_at board a b ]
+          else p2_tiles := !p2_tiles @ [ letter_at board a b ];
+
         backpointers := (letter_at board a b, a, b) :: !backpointers;
         set_letter a b board (String.uppercase_ascii letter);
         if !player1 then
@@ -339,11 +430,20 @@ let rec loop () : unit =
   print_board board;
   let tile_list = if !player1 then !p1_tiles else !p2_tiles in
   print_info !p1_points !p2_points !player1 tile_list !tiles_bag;
+  print_menu_bar !menu_open;
   paint_outline !selected;
 
   let e = wait_next_event [ Button_down; Key_pressed ] in
 
-  if e.keypressed then (
+  if !menu_open then (
+    let xpos = e.mouse_x in
+    let ypos = e.mouse_y in
+    if
+      xpos >= grid_size - menu_bar_size && ypos >= grid_size + info_section_size
+    then (
+      paint_close_menu None;
+      menu_open := false))
+  else if e.keypressed then (
     let letter = String.make 1 e.key in
     (* They entered a letter, so we put it on the board. *)
     if List.mem letter alphabet then enter_cell letter !selected
@@ -359,10 +459,14 @@ let rec loop () : unit =
   else if e.button then (
     let xpos = e.mouse_x in
     let ypos = e.mouse_y in
-    let cell = find_squ xpos ypos in
-    if find_squ xpos ypos <> !selected then selected := cell;
-    print_board board;
-    print_info !p1_points !p2_points !player1 [] !tiles_bag;
-    paint_outline !selected);
+    if xpos <= menu_button_width && ypos >= grid_size then (
+      menu_open := true;
+      print_menu_bar !menu_open)
+    else
+      let cell = find_squ xpos ypos in
+      if find_squ xpos ypos <> !selected then selected := cell;
+      print_board board;
+      print_info !p1_points !p2_points !player1 [] !tiles_bag;
+      paint_outline !selected);
 
   if !game_over = false then loop ()

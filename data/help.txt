@@ -1,0 +1,47 @@
+Welcome to Scrabble!
+How to play:
+Select a tile by pressing in that tile. Then enter a letter from your rack by selecting a letter 
+that you see dsiplayed at the bottom of the screen. To enter your blank, type '-'.
+To reset your turn, enter a space and to enter your guess enter /
+If what you entered was a valid move, you will be prompted to switch turns, otherwise your turn 
+will be reset and you will be asked to try again.
+
+========================
+Scrabble Rules Overview:
+
+Objective:
+  - The goal of Scrabble is to score the most points by making words using letter tiles.
+
+Game Setup:
+  - Each player draws 7 letter tiles from the tile bag to form their starting hand.
+  - The board consists of a 15x15 grid of squares, some of which have special scoring multipliers.
+
+Playing the Game:
+
+Forming Words: 
+  - On each turn, a player forms a word using their tiles and places them on the board.
+  - The first word must be placed such that one of its tiles is on the center square.
+  - Subsequent words must connect to or extend words already on the board.
+
+Valid Moves:
+  - Words can be formed horizontally (left to right) or vertically (top to bottom).
+  - All words formed (including new words created by adding to existing words) must be valid words 
+    according to the dictionary.
+
+Scoring Points:
+  - Each letter tile has a point value.
+  - Points for a word are calculated by summing the point values of its tiles.
+  - Special board squares multiply the points:
+     - Double Letter Score (DL): Doubles the point value of the tile placed on it.
+     - Triple Letter Score (TL): Triples the point value of the tile placed on it.
+     - Double Word Score (DW): Doubles the total point value of the word.
+     - Triple Word Score (TW): Triples the total point value of the word.
+
+End of Turn:
+  - After placing tiles and calculating the score, the player draws new tiles from the bag to 
+    replenish their hand to 7 tiles and play goes to the other player.
+
+Game End:
+  - The game ends when all tiles have been drawn and one player uses their last tile, or when 
+     no more valid moves can be made.
+  - Final scores are counted, and the player with the highest score wins.

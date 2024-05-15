@@ -297,6 +297,12 @@ let rec get_guess_lst spaces acc board =
           if List.mem tup acc then get_guess_lst t acc board
           else get_guess_lst t (acc @ [ tup ]) board)
 
+let rec pr_array = function
+  | [] -> ()
+  | (str, _, _, _) :: t ->
+      print_string (str ^ ",");
+      pr_array t
+
 (** [eval_guess] returns the point value of the user's guess - <-1 if it is not
     a valid guess*)
 let eval_guess (board : Gameboard.t)
@@ -305,6 +311,7 @@ let eval_guess (board : Gameboard.t)
   match get_all_words board guess_lst with
   | None -> -1
   | Some words_lst ->
+      let _ = pr_array words_lst in
       if List.length words_lst = 0 then -1
       else if
         (* check if it was a valid connecting move, if so calculate points *)

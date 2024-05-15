@@ -130,6 +130,27 @@ let rec set_lst gb = function
       let _ = set_letter x y gb letter in
       set_lst gb t
 
+let gameboard_function_tests =
+  "tests gameboard functions: "
+  >::: [
+         ( "test played_at 7 3" >:: fun _ ->
+           assert_equal (played_at board 7 3) false );
+         ( "test played_at 7 4" >:: fun _ ->
+           assert_equal (played_at board 7 4) false );
+         ( "test multiplier_at 7 7" >:: fun _ ->
+           assert_equal (multiplier_at board 7 7) Star );
+         ( "test multiplier_at 7 3" >:: fun _ ->
+           assert_equal (multiplier_at board 7 3) DL );
+         ( "test multiplier_at 7 0" >:: fun _ ->
+           assert_equal (multiplier_at board 7 0) TW );
+         ( "test multiplier_at 7 1" >:: fun _ ->
+           assert_equal (multiplier_at board 7 1) No );
+         ( "test was blank at 7 7" >:: fun _ ->
+           assert_equal (was_blank_at board 7 7) false );
+         ( "test was blank at 7 3" >:: fun _ ->
+           assert_equal (was_blank_at board 7 3) false );
+       ]
+
 let eval_tests =
   "tests for evaluation of points"
   >::: [
@@ -147,3 +168,4 @@ let _ = run_test_tt_main bag_tests
 let _ = run_test_tt_main gameboard_tests
 let _ = run_test_tt_main score_tests
 let _ = run_test_tt_main eval_tests
+let _ = run_test_tt_main gameboard_function_tests

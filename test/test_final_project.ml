@@ -55,8 +55,17 @@ let _ = play_letter 10 10 board
 let _ = play_letter 5 3 board
 
 let gameboard_tests =
-  "tests for empty gameboard"
+  "tests for setting and playing letters on gameboard"
   >::: [
+         ("test new board is empty"
+         >::
+         let new_board = init () in
+         fun _ -> assert_equal (is_empty new_board) true);
+         ("test setting letter keeps empty board empty"
+         >::
+         let new_board = init () in
+         let _ = set_letter 3 2 new_board "D" in
+         fun _ -> assert_equal (is_empty new_board) true);
          ( "test multipliers" >:: fun _ ->
            assert_equal (multiplier_at board 0 0) TW );
          ( "test multipliers 2" >:: fun _ ->
@@ -88,6 +97,22 @@ let gameboard_tests =
          ("test letter_at 6" >:: fun _ -> assert_equal (letter_at board 2 3) "A");
          ( "test letter_at 6" >:: fun _ ->
            assert_equal (letter_at board 2 3 == letter_at board 5 3) true );
+         ("test setting letter doesn't play it"
+         >::
+         let _ = set_letter 4 4 board "D" in
+         fun _ -> assert_equal (played_at board 4 4) false);
+         ("test setting overriding letters plays correct letter"
+         >::
+         let _ = set_letter 5 4 board "D" in
+         let _ = set_letter 5 4 board "E" in
+         let _ = play_letter 5 4 board in
+         fun _ -> assert_equal (letter_at board 5 4) "E");
+         ("test cannot override already played letter"
+         >::
+         let _ = set_letter 6 4 board "D" in
+         let _ = play_letter 6 4 board in
+         let _ = set_letter 6 4 board "E" in
+         fun _ -> assert_equal (played_at board 6 4) true);
        ]
 
 let score_tests =

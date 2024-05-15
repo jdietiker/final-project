@@ -68,3 +68,6 @@ val play_letter : int -> int -> t -> unit
 
 val is_empty : t -> bool
 (** [is_empty board ] is true if there are no played tiles on the board [board]*)
+
+val project_root : unit -> string
+(**[project_root] is the directory to the root of the dune project *)

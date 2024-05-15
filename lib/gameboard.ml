@@ -1,3 +1,24 @@
+open Sys
+
+(* Check if a file exists (helper function for find_project_root)*)
+let file_exists path =
+  try
+    let _ = Unix.stat path in
+    true
+  with Unix.Unix_error (Unix.ENOENT, _, _) -> false
+
+(* Find the project root by looking for the dune-project file *)
+let rec find_project_root_aux current_dir =
+  let potential_root = Filename.concat current_dir "dune-project" in
+  if file_exists potential_root then current_dir
+  else
+    let parent_dir = Filename.dirname current_dir in
+    if String.equal current_dir parent_dir then
+      failwith "dune-project file not found in any parent directories"
+    else find_project_root_aux parent_dir
+
+let project_root () = find_project_root_aux (Sys.getcwd ())
+
 type multiplier =
   | TW
   | DW
@@ -18,7 +39,7 @@ let match_mult = function
   | _ -> No
 
 let new_elt el = (match_mult el, ref "", ref false, ref false)
-let board = Csv.to_array (Csv.load "data/board.csv")
+let board = Csv.to_array (Csv.load (project_root () ^ "/data/board.csv"))
 
 let empty : t =
   Array.init 15 (fun _ ->

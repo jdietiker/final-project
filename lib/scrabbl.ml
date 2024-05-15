@@ -1,6 +1,7 @@
 open Graphics
+open Gameboard
 
-let dict = Arg.read_arg "data/dictionary.txt"
+let dict = Arg.read_arg (project_root () ^ "/data/dictionary.txt")
 
 module StringSet = Set.Make (struct
   type t = string
@@ -22,8 +23,8 @@ let convert_assoc csv =
 
 (**[point_val] is the point value of the letter entered:*)
 let point_val l =
-  if List.mem_assoc l (convert_assoc "data/points.csv") then
-    List.assoc l (convert_assoc "data/points.csv")
+  if List.mem_assoc l (convert_assoc (project_root () ^ "/data/points.csv"))
+  then List.assoc l (convert_assoc (project_root () ^ "/data/points.csv"))
   else 0
 
 (** [loop_guess board lst (cols,rows)] inputs a list of letters with

@@ -7,9 +7,12 @@ let info_section_size = 120
 let menu_bar_size = 20
 let menu_button_width = 42
 let grid_size = 601
-let alphabet = Array.to_list (Arg.read_arg "data/alphabet.txt")
+
+let alphabet =
+  Array.to_list (Arg.read_arg (project_root () ^ "/data/alphabet.txt"))
+
 let board = init
-let help = Arg.read_arg "data/help.txt"
+let help = Arg.read_arg (project_root () ^ "/data/help.txt")
 
 module StringSet = Set.Make (struct
   type t = string

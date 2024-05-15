@@ -128,6 +128,10 @@ let score_tests =
            assert_equal false (Scrabbl.valid_word "uncr") );
          ( "test dictionary membership 4" >:: fun _ ->
            assert_equal false (Scrabbl.valid_word "zbungmboc") );
+         ( "test dictionary membership 5" >:: fun _ ->
+           assert_equal true (Scrabbl.valid_word "dictionary") );
+         ( "test dictionary membership 6" >:: fun _ ->
+           assert_equal true (Scrabbl.valid_word "boo") );
          ( "verify score for invalid letters" >:: fun _ ->
            assert_equal 0 (Scrabbl.point_val "a") );
          ( "verify score for invalid letters 2" >:: fun _ ->
@@ -161,10 +165,16 @@ let gameboard_function_tests =
            assert_equal (multiplier_at board 7 0) TW );
          ( "test multiplier_at 7 1" >:: fun _ ->
            assert_equal (multiplier_at board 7 1) No );
+         ( "test multiplier_at 7 9" >:: fun _ ->
+           assert_equal (multiplier_at board 14 0) TW );
+         ( "test multiplier_at 7 1" >:: fun _ ->
+           assert_equal (multiplier_at board 7 1) No );
          ( "test was blank at 7 7" >:: fun _ ->
            assert_equal (was_blank_at board 7 7) false );
          ( "test was blank at 7 3" >:: fun _ ->
            assert_equal (was_blank_at board 7 3) false );
+         ( "test was blank at 7 3" >:: fun _ ->
+           assert_equal (was_blank_at board 7 9) false );
        ]
 
 let board2 = init ()
@@ -195,20 +205,16 @@ let eval_tests =
            assert_equal (letter_at board2 7 4) "E" );
          ("test letter_at 3" >:: fun _ -> assert_equal (letter_at board2 5 3) "");
          ( "test eval HELLO" >:: fun _ ->
-           print_endline "running test for hello";
            assert_equal (Scrabbl.eval_guess board2 lst1) 24 );
          ( "test played 2" >:: fun _ ->
            play_lst board2 lst1;
            assert_equal (played_at board2 7 4) true );
          ( "test add word" >:: fun _ ->
-           print_endline "running test for LOW";
-
            play_lst board2 lst1;
            set_lst board2 lst2;
 
            assert_equal (Scrabbl.eval_guess board2 lst2) 7 );
          ( "test double words" >:: fun _ ->
-           print_endline "running test for double words";
            let prev_lst = lst1 @ lst2 in
            play_lst board2 prev_lst;
            set_lst board2 (lst3 @ prev_lst);
@@ -216,12 +222,6 @@ let eval_tests =
        ]
 
 let board3 = init ()
-
-let rec print_array = function
-  | [] -> ()
-  | (str, _, _, _) :: t ->
-      print_string (str ^ ",");
-      print_array t
 
 let get_all_words_test =
   "tests for get_all_words"
@@ -237,6 +237,9 @@ let get_all_words_test =
          ( "test invalid cases 2" >:: fun _ ->
            set_lst board3 lst1;
            assert_equal (Scrabbl.eval_guess board3 lst4) (-1) );
+         ( "test invalid cases 3" >:: fun _ ->
+           set_lst board3 lst1;
+           assert_equal (Scrabbl.eval_guess board3 lst3) (-1) );
        ]
 
 let _ = set_lst board2 lst1
@@ -244,9 +247,6 @@ let _ = set_lst board3 lst1
 let _ = run_test_tt_main bag_tests
 let _ = run_test_tt_main gameboard_tests
 let _ = run_test_tt_main score_tests
-
-(* let _ = run_test_tt_main eval_tests *)
+let _ = run_test_tt_main eval_tests
 let _ = run_test_tt_main gameboard_function_tests
-
-(* let board = init () let _ = set_lst board guess_lst *)
 let _ = run_test_tt_main get_all_words_test

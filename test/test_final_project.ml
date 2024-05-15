@@ -188,9 +188,24 @@ let eval_tests =
            assert_equal (Scrabbl.eval_guess board guess_lst) 24 );
        ]
 
+let get_all_words_test =
+  "tests for get_all_words"
+  >::: [
+         ( "test get_all_words HELLO" >:: fun _ ->
+           assert_equal
+             (Scrabbl.get_all_words board guess_lst)
+             (Some [ ("HELLO", 7, 3, true) ]) );
+       ]
+
+let guess_lst_2 =
+  [ ("H", 7, 3); ("E", 7, 4); ("L", 7, 5); ("L", 7, 6); ("O", 7, 7) ]
+
 let _ = set_lst board guess_lst
 let _ = run_test_tt_main bag_tests
 let _ = run_test_tt_main gameboard_tests
 let _ = run_test_tt_main score_tests
 let _ = run_test_tt_main eval_tests
 let _ = run_test_tt_main gameboard_function_tests
+let board = init ()
+let _ = set_lst board guess_lst
+let _ = run_test_tt_main get_all_words_test

@@ -1,3 +1,4 @@
+(** [multiplier] is the type of the multiplier *)
 type multiplier =
   | TW
   | DW

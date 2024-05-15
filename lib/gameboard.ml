@@ -17,6 +17,7 @@ let rec find_project_root_aux current_dir =
 
 let project_root () = find_project_root_aux (Sys.getcwd ())
 
+(** [multiplier] represents the multiplier associated with a tile on a board*)
 type multiplier =
   | TW
   | DW
@@ -26,7 +27,14 @@ type multiplier =
   | No
 
 type elt = multiplier * string ref * bool ref * bool ref
+(** [elt] is a quadruple representing a full tile on a board that has a
+    multiplier, a changeable letter, and whether or not a tile is set or played. *)
+
 type t = elt array array
+(** Abstraction function: [elt array array] is a 2D array of tiles that
+    represents a grid of elements on a gameboard. The outer array represents the
+    rows, and the inner array represents the columns of the gameboard.
+    Representation invariant: the size of the arrays must be greater than 0. *)
 
 let match_mult = function
   | "DL" -> DL

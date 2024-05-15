@@ -157,8 +157,8 @@ let rec check_opp board guess_lst current_vert word_lst =
           in
           check_opp board t current_vert new_lst)
 
-(** [eval_guess] returns the point value of the user's guess - <0 if it is not a
-    valid guess*)
+(** [get_all_words] returns the point value of the user's guess - <0 if it is
+    not a valid guess*)
 let get_all_words (board : Gameboard.t)
     (guess_lst : (string * color * color) list) =
   let words_lst = ref [] in

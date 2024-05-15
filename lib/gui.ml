@@ -91,6 +91,27 @@ let print_info p1_points p2_points player1 curr_tiles tiles_bag =
   set_color black;
   draw_string "Current tiles: "
 
+(* paints the switching turn visual at the bottom *)
+let paint_switch_turns player1 =
+  let s1 = "SWITCHING TURNS" in
+  let s2 =
+    if player1 then "Player 1 --> Player 2" else "Player 2 --> Player 1"
+  in
+  let s1_len, height = text_size s1 in
+  let s2_len, _ = text_size s2 in
+  set_color white;
+  fill_rect 0 0 grid_size info_section_size;
+
+  set_color black;
+  let x1 = (grid_size / 2) - (s1_len / 2) in
+  let y1 = (info_section_size / 2) + 3 in
+  let x2 = (grid_size / 2) - (s2_len / 2) in
+  let y2 = (info_section_size / 2) - 3 - height in
+  moveto x1 y1;
+  draw_string s1;
+  moveto x2 y2;
+  draw_string s2
+
 (* paints the x for the menu bar *)
 let paint_x _ =
   let x_color = Graphics.rgb 198 109 109 in
@@ -345,6 +366,7 @@ let player1 = ref true
 let tiles_backpointer : string list ref = ref []
 let game_over = ref false
 let menu_open = ref false
+let between_turns = ref false
 
 let init_vars p1_tiles_init p2_tiles_init tiles_bag_init =
   p1_tiles := p1_tiles_init;
@@ -402,6 +424,8 @@ let try_guess () =
   if points >= 0 then (
     let _ = play_tiles !backpointers in
     if !player1 then (
+      paint_switch_turns !player1;
+      between_turns := true;
       player1 := false;
       p1_points := !p1_points + points;
       tiles_backpointer := !p2_tiles;
@@ -409,6 +433,8 @@ let try_guess () =
       p1_tiles := tl;
       tiles_bag := tb)
     else (
+      paint_switch_turns !player1;
+      between_turns := true;
       player1 := true;
       p2_points := !p2_points + points;
       tiles_backpointer := !p1_tiles;
@@ -438,7 +464,8 @@ let rec loop () : unit =
   draw_grid;
   print_board board;
   let tile_list = if !player1 then !p1_tiles else !p2_tiles in
-  print_info !p1_points !p2_points !player1 tile_list !tiles_bag;
+  if !between_turns = false then
+    print_info !p1_points !p2_points !player1 tile_list !tiles_bag;
   print_menu_bar !menu_open;
   paint_outline !selected;
 
@@ -452,6 +479,9 @@ let rec loop () : unit =
     then (
       paint_close_menu None;
       menu_open := false))
+  else if !between_turns then (
+    between_turns := false;
+    print_info !p1_points !p2_points !player1 tile_list !tiles_bag)
   else if e.keypressed then (
     let letter = String.make 1 e.key in
     (* They entered a letter, so we put it on the board. *)

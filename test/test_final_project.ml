@@ -66,6 +66,8 @@ let gameboard_tests =
          let new_board = init () in
          let _ = set_letter 3 2 new_board "D" in
          fun _ -> assert_equal (is_empty new_board) true);
+         ( "test non-empty board is not empty" >:: fun _ ->
+           assert_equal (is_empty board) false );
          ( "test multipliers" >:: fun _ ->
            assert_equal (multiplier_at board 0 0) TW );
          ( "test multipliers 2" >:: fun _ ->

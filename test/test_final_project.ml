@@ -44,7 +44,7 @@ let bag_tests =
            assert_equal 2 (List.length bag1) );
        ]
 
-let board = init
+let board = init ()
 let _ = set_letter 2 3 board "A"
 let _ = set_letter 2 2 board "B"
 let _ = set_letter 10 10 board "C"
@@ -119,7 +119,7 @@ let score_tests =
            assert_equal 3 (Scrabbl.point_val "M") );
        ]
 
-let board = init
+let board = init ()
 
 let guess_lst =
   [ ("H", 7, 3); ("E", 7, 4); ("L", 7, 5); ("L", 7, 6); ("O", 7, 7) ]
@@ -130,24 +130,20 @@ let rec set_lst gb = function
       let _ = set_letter x y gb letter in
       set_lst gb t
 
-let _ = set_lst board guess_lst
-(* let _ = play_letter 2 3 board let _ = play_letter 2 2 board let _ =
-   play_letter 10 10 board let _ = play_letter 5 3 board *)
-
 let eval_tests =
   "tests for evaluation of points"
   >::: [
-         ("test letter_at" >:: fun _ -> assert_equal (letter_at board 7 6) "L");
-         ("test letter_at 2" >:: fun _ -> assert_equal (letter_at board 7 7) "O");
+         ("test letter_at" >:: fun _ -> assert_equal (letter_at board 7 3) "H");
+         ("test letter_at 2" >:: fun _ -> assert_equal (letter_at board 7 4) "E");
          ( "test eval HELLO" >:: fun _ ->
            let _ =
              print_endline (string_of_int (Scrabbl.eval_guess board guess_lst))
            in
-           assert_equal (Scrabbl.eval_guess board guess_lst) 12 );
+           assert_equal (Scrabbl.eval_guess board guess_lst) 24 );
        ]
 
+let _ = set_lst board guess_lst
 let _ = run_test_tt_main bag_tests
 let _ = run_test_tt_main gameboard_tests
 let _ = run_test_tt_main score_tests
-(* let _ = run_test_tt_main eval_tests *)
-(* not working yet ^ *)
+let _ = run_test_tt_main eval_tests

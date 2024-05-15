@@ -43,7 +43,7 @@ let empty : t =
   Array.init 15 (fun _ ->
       Array.init 15 (fun _ -> (No, ref "", ref false, ref false)))
 
-let init : t =
+let init () : t =
   Array.init 15 (fun x -> Array.init 15 (fun y -> new_elt board.(x).(y)))
 
 let multiplier_at (board : t) i j =

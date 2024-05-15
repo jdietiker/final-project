@@ -19,7 +19,7 @@ type t = elt array array
 val empty : t
 (** [empty] is an empty board. *)
 
-val init : t
+val init : unit -> t
 (** [init] is the gameboard inialized to its 15x15 starting state with
     multiplers and no letters played. *)
 

@@ -348,6 +348,7 @@ let menu_open = ref false
 
 let init_vars p1_tiles_init p2_tiles_init tiles_bag_init =
   p1_tiles := p1_tiles_init;
+  tiles_backpointer := !p1_tiles;
   p2_tiles := p2_tiles_init;
   tiles_bag := tiles_bag_init
 
@@ -419,6 +420,12 @@ let try_guess () =
       && (List.length !p2_tiles = 0 || List.length !p1_tiles = 0)
     then end_game ())
   else (
+    print_endline
+      ("tring to reset: length of backpointers: "
+      ^ string_of_int (List.length !backpointers));
+    print_endline
+      ("tring to reset: length of tiles backpointers: "
+      ^ string_of_int (List.length !tiles_backpointer));
     reset_turn backpointers;
     if !player1 then p1_tiles := !tiles_backpointer
     else p2_tiles := !tiles_backpointer);
